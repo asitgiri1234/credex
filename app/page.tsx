@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 type UseCase = "coding" | "writing" | "data" | "research" | "mixed";
@@ -14,6 +14,7 @@ interface ToolEntry {
 }
 
 const TOOL_OPTIONS = ["Cursor", "GitHub Copilot", "Claude", "ChatGPT", "Anthropic API", "OpenAI API", "Gemini", "Windsurf"];
+const SUBSCRIPTIONS_STORAGE_KEY = "credex-subscriptions";
 
 export default function Home(): ReactElement {
   const [teamSize, setTeamSize] = useState("5");
@@ -58,6 +59,17 @@ export default function Home(): ReactElement {
       setIsRunningAudit(false);
     }
   };
+
+  useEffect(() => {
+    const payload = toolRows.map((row) => ({
+      tool: row.tool,
+      plan: row.plan,
+      monthlySpend: Number(row.monthlySpend) || 0,
+      seats: Number(row.seats) || 1,
+    }));
+
+    localStorage.setItem(SUBSCRIPTIONS_STORAGE_KEY, JSON.stringify(payload));
+  }, [toolRows]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
