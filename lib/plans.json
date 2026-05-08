@@ -1,0 +1,164 @@
+[
+  {
+    "name": "Cursor",
+    "slug": "cursor",
+    "logo": "⌨️",
+    "category": "IDE assistant",
+    "type": "coding-assistant",
+    "apiBased": false,
+    "contextWindow": "128k",
+    "requestLimits": "High daily coding usage",
+    "apiPricing": "No public API; seat subscription",
+    "teamPlan": true,
+    "enterprise": true,
+    "capabilities": ["code-completion", "file-upload", "large-context"],
+    "bestFor": "Software teams building production code",
+    "plans": [
+      { "name": "Hobby", "monthlyPrice": 0, "yearlyPrice": 0, "features": ["Basic coding help", "Starter usage"] },
+      { "name": "Pro", "monthlyPrice": 20, "yearlyPrice": 192, "features": ["Advanced code completion", "Agent workflows"] },
+      { "name": "Business", "monthlyPrice": 40, "yearlyPrice": 480, "features": ["Admin controls", "Team governance"] },
+      { "name": "Enterprise", "monthlyPrice": null, "yearlyPrice": null, "features": ["SSO", "Security controls"] }
+    ]
+  },
+  {
+    "name": "OpenAI API",
+    "slug": "openai-api",
+    "logo": "🧠",
+    "category": "API",
+    "type": "api",
+    "apiBased": true,
+    "contextWindow": "Model dependent",
+    "requestLimits": "Token metered",
+    "apiPricing": "Pay-as-you-go",
+    "teamPlan": false,
+    "enterprise": true,
+    "capabilities": ["image-generation", "code-completion", "voice", "file-upload", "web-browsing", "large-context"],
+    "bestFor": "Products needing model API integration",
+    "plans": [
+      { "name": "Pay-as-you-go", "monthlyPrice": null, "yearlyPrice": null, "features": ["Usage billing", "Model-by-model pricing"] },
+      { "name": "Enterprise contract", "monthlyPrice": null, "yearlyPrice": null, "features": ["Commit discounts", "Priority support"] }
+    ]
+  },
+  {
+    "name": "Claude API",
+    "slug": "claude-api",
+    "logo": "🤖",
+    "category": "API",
+    "type": "api",
+    "apiBased": true,
+    "contextWindow": "200k+ model dependent",
+    "requestLimits": "Token metered",
+    "apiPricing": "Pay-as-you-go",
+    "teamPlan": false,
+    "enterprise": true,
+    "capabilities": ["code-completion", "file-upload", "large-context"],
+    "bestFor": "Long-context AI app workflows",
+    "plans": [
+      { "name": "Pay-as-you-go", "monthlyPrice": null, "yearlyPrice": null, "features": ["Token pricing", "No fixed seat cost"] },
+      { "name": "Enterprise contract", "monthlyPrice": null, "yearlyPrice": null, "features": ["Custom SLAs", "Volume pricing"] }
+    ]
+  },
+  {
+    "name": "Windsurf",
+    "slug": "windsurf",
+    "logo": "🌊",
+    "category": "IDE assistant",
+    "type": "coding-assistant",
+    "apiBased": false,
+    "contextWindow": "128k",
+    "requestLimits": "Credit based monthly limits",
+    "apiPricing": "Not primary offering",
+    "teamPlan": true,
+    "enterprise": false,
+    "capabilities": ["code-completion", "file-upload", "large-context"],
+    "bestFor": "Developers optimizing coding tool spend",
+    "plans": [
+      { "name": "Free", "monthlyPrice": 0, "yearlyPrice": 0, "features": ["Basic coding support"] },
+      { "name": "Pro", "monthlyPrice": 15, "yearlyPrice": 144, "features": ["Premium models", "Faster responses"] },
+      { "name": "Teams", "monthlyPrice": 35, "yearlyPrice": 420, "features": ["Team collaboration", "Admin controls"] }
+    ]
+  },
+  {
+    "name": "GitHub Copilot",
+    "slug": "github-copilot",
+    "logo": "🐙",
+    "category": "IDE assistant",
+    "type": "coding-assistant",
+    "apiBased": false,
+    "contextWindow": "IDE-dependent",
+    "requestLimits": "Fair use",
+    "apiPricing": "No standalone API",
+    "teamPlan": true,
+    "enterprise": true,
+    "capabilities": ["code-completion"],
+    "bestFor": "Engineering teams in GitHub ecosystem",
+    "plans": [
+      { "name": "Individual", "monthlyPrice": 10, "yearlyPrice": 100, "features": ["Inline suggestions"] },
+      { "name": "Business", "monthlyPrice": 19, "yearlyPrice": 228, "features": ["Org policy controls"] },
+      { "name": "Enterprise", "monthlyPrice": 39, "yearlyPrice": 468, "features": ["Enterprise governance"] }
+    ]
+  },
+  {
+    "name": "Claude",
+    "slug": "claude",
+    "logo": "📝",
+    "category": "Chat assistant",
+    "type": "chatbot",
+    "apiBased": false,
+    "contextWindow": "200k",
+    "requestLimits": "Message based limits",
+    "apiPricing": "Separate via Claude API",
+    "teamPlan": true,
+    "enterprise": true,
+    "capabilities": ["code-completion", "file-upload", "large-context"],
+    "bestFor": "Research and writing heavy teams",
+    "plans": [
+      { "name": "Free", "monthlyPrice": 0, "yearlyPrice": 0, "features": ["Basic Claude access"] },
+      { "name": "Pro", "monthlyPrice": 20, "yearlyPrice": 204, "features": ["More usage", "Priority access"] },
+      { "name": "Team", "monthlyPrice": 30, "yearlyPrice": 300, "features": ["Shared workspace"] },
+      { "name": "Enterprise", "monthlyPrice": null, "yearlyPrice": null, "features": ["Custom security controls"] }
+    ]
+  },
+  {
+    "name": "ChatGPT",
+    "slug": "chatgpt",
+    "logo": "💬",
+    "category": "Chat assistant",
+    "type": "chatbot",
+    "apiBased": false,
+    "contextWindow": "128k",
+    "requestLimits": "Message and feature limits",
+    "apiPricing": "Separate via OpenAI API",
+    "teamPlan": true,
+    "enterprise": true,
+    "capabilities": ["image-generation", "code-completion", "voice", "file-upload", "web-browsing"],
+    "bestFor": "General-purpose work assistant",
+    "plans": [
+      { "name": "Free", "monthlyPrice": 0, "yearlyPrice": 0, "features": ["Basic access"] },
+      { "name": "Plus", "monthlyPrice": 20, "yearlyPrice": 240, "features": ["Advanced models", "File uploads", "Web browsing"] },
+      { "name": "Team", "monthlyPrice": 30, "yearlyPrice": 300, "features": ["Collaboration", "Admin controls"] },
+      { "name": "Enterprise", "monthlyPrice": null, "yearlyPrice": null, "features": ["Security and compliance"] }
+    ]
+  },
+  {
+    "name": "Gemini",
+    "slug": "gemini",
+    "logo": "✨",
+    "category": "Chat assistant",
+    "type": "chatbot",
+    "apiBased": false,
+    "contextWindow": "1M",
+    "requestLimits": "Usage-tier dependent",
+    "apiPricing": "Separate via Gemini API",
+    "teamPlan": true,
+    "enterprise": true,
+    "capabilities": ["image-generation", "code-completion", "file-upload", "voice", "large-context"],
+    "bestFor": "Users prioritizing large context windows",
+    "plans": [
+      { "name": "Free", "monthlyPrice": 0, "yearlyPrice": 0, "features": ["Basic access"] },
+      { "name": "Pro", "monthlyPrice": 20, "yearlyPrice": 192, "features": ["Premium model access"] },
+      { "name": "Ultra", "monthlyPrice": 25, "yearlyPrice": 252, "features": ["Higher usage caps"] },
+      { "name": "Enterprise", "monthlyPrice": null, "yearlyPrice": null, "features": ["Enterprise controls"] }
+    ]
+  }
+]
