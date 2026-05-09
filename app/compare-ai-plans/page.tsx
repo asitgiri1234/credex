@@ -50,7 +50,7 @@ const getPlanByName = (tool: ToolEntry, planName: string): PlanEntry | undefined
   return tool.plans.find((plan) => plan.name === planName);
 };
 
-const formatInr = (usdAmount: number): string => `₹${Math.round(usdAmount * 83).toLocaleString()}`;
+const formatUsd = (amount: number): string => `$${amount.toLocaleString()}`;
 
 export default function CompareAiPlansPage(): ReactElement {
   const [search, setSearch] = useState("");
@@ -101,9 +101,9 @@ export default function CompareAiPlansPage(): ReactElement {
   const comparisonRows = useMemo(
     () => [
       { label: "Free Plan", values: selectedTools.map((tool) => (tool.plans.some((plan) => plan.monthlyPrice === 0) ? "Yes" : "No")) },
-      { label: "Cheapest Paid Plan", values: selectedTools.map((tool) => { const plan = getCheapestPaidPlan(tool); return plan ? `${plan.name} (${formatInr(Number(plan.monthlyPrice))}/mo)` : "Custom only"; }) },
-      { label: "Monthly Cost", values: selectedTools.map((tool) => { const amount = getCheapestPaidPlan(tool)?.monthlyPrice; return typeof amount === "number" ? formatInr(amount) : "Custom"; }) },
-      { label: "Annual Cost", values: selectedTools.map((tool) => { const amount = getCheapestPaidPlan(tool)?.yearlyPrice; return typeof amount === "number" ? formatInr(amount / 12) : "N/A"; }) },
+      { label: "Cheapest Paid Plan", values: selectedTools.map((tool) => { const plan = getCheapestPaidPlan(tool); return plan ? `${plan.name} (${formatUsd(Number(plan.monthlyPrice))}/mo)` : "Custom only"; }) },
+      { label: "Monthly Cost", values: selectedTools.map((tool) => { const amount = getCheapestPaidPlan(tool)?.monthlyPrice; return typeof amount === "number" ? formatUsd(amount) : "Custom"; }) },
+      { label: "Annual Cost", values: selectedTools.map((tool) => { const amount = getCheapestPaidPlan(tool)?.yearlyPrice; return typeof amount === "number" ? `${formatUsd(amount)}/yr` : "N/A"; }) },
       { label: "API Pricing", values: selectedTools.map((tool) => tool.apiPricing) },
       { label: "Request/token limits", values: selectedTools.map((tool) => tool.requestLimits) },
       { label: "Context window", values: selectedTools.map((tool) => tool.contextWindow) },
@@ -170,7 +170,7 @@ export default function CompareAiPlansPage(): ReactElement {
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             <Stat label="Total tools compared" value={String(quickStats.totalTools)} />
-            <Stat label="Cheapest paid plan" value={`${formatInr(quickStats.cheapestPaid)}/month`} />
+            <Stat label="Cheapest paid plan" value={`${formatUsd(quickStats.cheapestPaid)}/month`} />
             <Stat label="Free plans available" value={String(quickStats.freePlans)} />
           </div>
         </section>
@@ -188,7 +188,7 @@ export default function CompareAiPlansPage(): ReactElement {
             <article key={tool.slug} className="rounded-2xl border border-white/10 bg-slate-900/70 p-5">
               <div className="mb-3 flex items-center gap-2"><span className="text-2xl">{tool.logo}</span><h3 className="text-lg font-semibold">{tool.name}</h3></div>
               <p className="mb-2 inline-flex rounded-full bg-indigo-500/20 px-2 py-1 text-xs text-indigo-200">{tool.category}</p>
-              <p className="text-sm text-slate-300">Starts at {getCheapestPaidPlan(tool)?.monthlyPrice ? `${formatInr(Number(getCheapestPaidPlan(tool)?.monthlyPrice))}/month` : "Custom"}</p>
+              <p className="text-sm text-slate-300">Starts at {getCheapestPaidPlan(tool)?.monthlyPrice ? `${formatUsd(Number(getCheapestPaidPlan(tool)?.monthlyPrice))}/month` : "Custom"}</p>
               <p className="text-sm text-slate-300">Free plan available: {tool.plans.some((plan) => plan.monthlyPrice === 0) ? "Yes" : "No"}</p>
               <div className="mt-3 flex gap-2">
                 <button onClick={() => toggleCompareTool(tool.slug)} className={`rounded-lg px-3 py-2 text-xs font-semibold ${selectedToolSlugs.includes(tool.slug) ? "bg-emerald-500 text-slate-900" : "bg-slate-800 text-white"}`}>{selectedToolSlugs.includes(tool.slug) ? "Added" : "Add to Compare"}</button>
@@ -217,7 +217,7 @@ export default function CompareAiPlansPage(): ReactElement {
           {overlapInsight ? (
             <div className="space-y-2">
               <p className="rounded-lg border border-orange-400/40 bg-orange-500/10 p-3 text-sm text-orange-200">{overlapInsight.message}</p>
-              <p className="rounded-lg border border-rose-400/40 bg-rose-500/10 p-3 text-sm text-rose-200">Estimated overlap waste: {formatInr(overlapInsight.waste)}/month</p>
+              <p className="rounded-lg border border-rose-400/40 bg-rose-500/10 p-3 text-sm text-rose-200">Estimated overlap waste: {formatUsd(overlapInsight.waste)}/month</p>
               <p className="rounded-lg border border-emerald-400/40 bg-emerald-500/10 p-3 text-sm font-semibold text-emerald-200">Recommendation: Keep one, cancel two.</p>
             </div>
           ) : (
@@ -235,7 +235,7 @@ export default function CompareAiPlansPage(): ReactElement {
                 <div key={row.id} className="grid gap-2 sm:grid-cols-12">
                   <select value={row.toolSlug} onChange={(event) => updateCalculatorTool(row.id, event.target.value)} className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm sm:col-span-4">{TOOL_DATA.map((toolEntry) => <option key={toolEntry.slug} value={toolEntry.slug}>{toolEntry.name}</option>)}</select>
                   <select value={row.planName} onChange={(event) => updateCalculatorPlan(row.id, event.target.value)} className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm sm:col-span-4">{(tool?.plans ?? []).map((toolPlan) => <option key={`${row.id}-${toolPlan.name}`} value={toolPlan.name}>{toolPlan.name}</option>)}</select>
-                  <input readOnly value={typeof plan?.monthlyPrice === "number" ? `${formatInr(Number(plan.monthlyPrice))}/month` : "Custom / usage"} className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm sm:col-span-3" />
+                  <input readOnly value={typeof plan?.monthlyPrice === "number" ? `${formatUsd(Number(plan.monthlyPrice))}/month` : "Custom / usage"} className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm sm:col-span-3" />
                   <button onClick={() => removeCalculatorRow(row.id)} className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200 sm:col-span-1">X</button>
                 </div>
               );
@@ -243,10 +243,10 @@ export default function CompareAiPlansPage(): ReactElement {
             <button onClick={addCalculatorRow} className="rounded-lg bg-indigo-500 px-3 py-2 text-sm font-semibold">+ Add Subscription</button>
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            <p className="rounded-lg border border-white/10 bg-slate-800/60 p-3 text-sm">Total spend: {formatInr(calculatorSummary.monthly)}/month</p>
-            <p className="rounded-lg border border-white/10 bg-slate-800/60 p-3 text-sm">Annual spend: {formatInr(calculatorSummary.annual)}/year</p>
+            <p className="rounded-lg border border-white/10 bg-slate-800/60 p-3 text-sm">Total spend: {formatUsd(calculatorSummary.monthly)}/month</p>
+            <p className="rounded-lg border border-white/10 bg-slate-800/60 p-3 text-sm">Annual spend: {formatUsd(calculatorSummary.annual)}/year</p>
           </div>
-          <p className="mt-3 rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">Savings suggestion: Switching to one chatbot + one coding assistant can reduce redundant spend by up to {formatInr(Math.round(calculatorSummary.monthly * 0.3))}/month.</p>
+          <p className="mt-3 rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">Savings suggestion: Switching to one chatbot + one coding assistant can reduce redundant spend by up to {formatUsd(Math.round(calculatorSummary.monthly * 0.3))}/month.</p>
         </section>
 
         <section className="mt-8 rounded-2xl border border-white/10 bg-slate-900/70 p-5">
@@ -260,7 +260,7 @@ export default function CompareAiPlansPage(): ReactElement {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-slate-950 p-5">
             <div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-semibold">{modalTool.name} Plan Breakdown</h3><button onClick={() => setModalToolSlug(null)} className="rounded-lg bg-slate-800 px-3 py-1 text-sm">Close</button></div>
-            <div className="space-y-3">{modalTool.plans.map((plan) => (<div key={`${modalTool.slug}-${plan.name}`} className="rounded-xl border border-white/10 bg-slate-900/70 p-4"><h4 className="text-lg font-semibold">{plan.name}</h4><p className="text-sm text-slate-300">Monthly: {typeof plan.monthlyPrice === "number" ? formatInr(Number(plan.monthlyPrice)) : "Custom / usage"}</p><ul className="mt-2 list-disc pl-5 text-sm text-slate-300">{plan.features.map((feature) => <li key={`${plan.name}-${feature}`}>{feature}</li>)}</ul></div>))}</div>
+            <div className="space-y-3">{modalTool.plans.map((plan) => (<div key={`${modalTool.slug}-${plan.name}`} className="rounded-xl border border-white/10 bg-slate-900/70 p-4"><h4 className="text-lg font-semibold">{plan.name}</h4><p className="text-sm text-slate-300">Monthly: {typeof plan.monthlyPrice === "number" ? formatUsd(Number(plan.monthlyPrice)) : "Custom / usage"}</p><ul className="mt-2 list-disc pl-5 text-sm text-slate-300">{plan.features.map((feature) => <li key={`${plan.name}-${feature}`}>{feature}</li>)}</ul></div>))}</div>
           </div>
         </div>
       ) : null}
