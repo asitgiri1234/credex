@@ -159,108 +159,319 @@ export default function CompareAiPlansPage(): ReactElement {
   const removeCalculatorRow = (id: string): void => setCalculatorRows((current) => current.filter((row) => row.id !== id));
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-blue-600/20 via-slate-900 to-slate-950 p-6">
-          <h1 className="text-3xl font-semibold sm:text-4xl">Compare AI Plans</h1>
-          <p className="mt-2 text-sm text-slate-300 sm:text-base">Find the right AI subscription and eliminate overlap spend before it hits your monthly burn.</p>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search AI tools" className="rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-sm text-white outline-none ring-indigo-500/60 focus:ring" />
-            <button onClick={() => document.getElementById("comparison-table")?.scrollIntoView({ behavior: "smooth" })} className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400">Compare Plans</button>
+    <div className="min-h-screen">
+      <main className="mx-auto max-w-7xl px-5 pb-24 pt-14 sm:px-8 sm:pt-16">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="eyebrow">Subscription optimizer</p>
+          <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-neutral-900 sm:text-5xl sm:leading-[1.08]">
+            Compare AI plans with intent
+          </h1>
+          <p className="mx-auto mt-5 max-w-xl text-pretty text-[17px] leading-relaxed text-neutral-600">
+            Search tools, filter by how you work, and see overlap before you commit to another subscription.
+          </p>
+        </div>
+
+        <section className="mx-auto mt-14 max-w-5xl surface-card p-8 sm:p-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0 flex-1">
+              <label htmlFor="tool-search" className="eyebrow">
+                Search
+              </label>
+              <input
+                id="tool-search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search AI tools"
+                className="input-product mt-3"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => document.getElementById("comparison-table")?.scrollIntoView({ behavior: "smooth" })}
+              className="btn-primary shrink-0"
+            >
+              Compare plans
+            </button>
           </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <Stat label="Total tools compared" value={String(quickStats.totalTools)} />
-            <Stat label="Cheapest paid plan" value={`${formatUsd(quickStats.cheapestPaid)}/month`} />
-            <Stat label="Free plans available" value={String(quickStats.freePlans)} />
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            <Stat label="Tools in catalog" value={String(quickStats.totalTools)} />
+            <Stat label="Lowest paid tier" value={`${formatUsd(quickStats.cheapestPaid)}/mo`} />
+            <Stat label="Tools with a free tier" value={String(quickStats.freePlans)} />
           </div>
         </section>
 
-        <section className="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <select value={pricingFilter} onChange={(event) => setPricingFilter(event.target.value as PricingFilter)} className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm"><option value="all">Pricing: All</option><option value="free">Pricing: Free</option><option value="under-10">Pricing: Under $10</option><option value="under-20">Pricing: Under $20</option><option value="premium">Pricing: Premium</option></select>
-            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value as TypeFilter)} className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm"><option value="all">Type: All</option><option value="api">API</option><option value="coding-assistant">Coding assistant</option><option value="chatbot">Chatbot</option><option value="team-tools">Team tools</option></select>
-            <select value={capabilityFilter} onChange={(event) => setCapabilityFilter(event.target.value as CapabilityFilter)} className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm"><option value="all">Capabilities: All</option><option value="image-generation">Image generation</option><option value="code-completion">Code completion</option><option value="file-upload">File upload</option><option value="voice">Voice</option><option value="large-context">Large context</option></select>
+        <section className="mx-auto mt-6 max-w-5xl surface-muted p-6 sm:p-8">
+          <p className="eyebrow">Filters</p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <select
+              value={pricingFilter}
+              onChange={(event) => setPricingFilter(event.target.value as PricingFilter)}
+              className="input-product"
+            >
+              <option value="all">Pricing — All</option>
+              <option value="free">Free tier</option>
+              <option value="under-10">Under $10/mo</option>
+              <option value="under-20">Under $20/mo</option>
+              <option value="premium">$20/mo and up</option>
+            </select>
+            <select
+              value={typeFilter}
+              onChange={(event) => setTypeFilter(event.target.value as TypeFilter)}
+              className="input-product"
+            >
+              <option value="all">Type — All</option>
+              <option value="api">API</option>
+              <option value="coding-assistant">Coding assistant</option>
+              <option value="chatbot">Chat assistant</option>
+              <option value="team-tools">Team-ready</option>
+            </select>
+            <select
+              value={capabilityFilter}
+              onChange={(event) => setCapabilityFilter(event.target.value as CapabilityFilter)}
+              className="input-product"
+            >
+              <option value="all">Capability — All</option>
+              <option value="image-generation">Image generation</option>
+              <option value="code-completion">Code completion</option>
+              <option value="file-upload">File upload</option>
+              <option value="voice">Voice</option>
+              <option value="large-context">Large context</option>
+            </select>
           </div>
         </section>
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="mx-auto mt-10 grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {filteredTools.map((tool) => (
-            <article key={tool.slug} className="rounded-2xl border border-white/10 bg-slate-900/70 p-5">
-              <div className="mb-3 flex items-center gap-2"><span className="text-2xl">{tool.logo}</span><h3 className="text-lg font-semibold">{tool.name}</h3></div>
-              <p className="mb-2 inline-flex rounded-full bg-indigo-500/20 px-2 py-1 text-xs text-indigo-200">{tool.category}</p>
-              <p className="text-sm text-slate-300">Starts at {getCheapestPaidPlan(tool)?.monthlyPrice ? `${formatUsd(Number(getCheapestPaidPlan(tool)?.monthlyPrice))}/month` : "Custom"}</p>
-              <p className="text-sm text-slate-300">Free plan available: {tool.plans.some((plan) => plan.monthlyPrice === 0) ? "Yes" : "No"}</p>
-              <div className="mt-3 flex gap-2">
-                <button onClick={() => toggleCompareTool(tool.slug)} className={`rounded-lg px-3 py-2 text-xs font-semibold ${selectedToolSlugs.includes(tool.slug) ? "bg-emerald-500 text-slate-900" : "bg-slate-800 text-white"}`}>{selectedToolSlugs.includes(tool.slug) ? "Added" : "Add to Compare"}</button>
-                <button onClick={() => setModalToolSlug(tool.slug)} className="rounded-lg bg-slate-800 px-3 py-2 text-xs font-semibold text-white">View Plans</button>
+            <article key={tool.slug} className="surface-card flex flex-col p-6">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl leading-none" aria-hidden>
+                  {tool.logo}
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-[17px] font-semibold tracking-tight text-neutral-900">{tool.name}</h3>
+                  <p className="mt-1 text-xs font-medium text-neutral-500">{tool.category}</p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm text-neutral-600">
+                From{" "}
+                {getCheapestPaidPlan(tool)?.monthlyPrice
+                  ? `${formatUsd(Number(getCheapestPaidPlan(tool)?.monthlyPrice))}/month`
+                  : "custom pricing"}
+              </p>
+              <p className="mt-1 text-sm text-neutral-500">
+                Free tier: {tool.plans.some((plan) => plan.monthlyPrice === 0) ? "Yes" : "No"}
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggleCompareTool(tool.slug)}
+                  className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                    selectedToolSlugs.includes(tool.slug)
+                      ? "bg-neutral-900 text-white"
+                      : "border border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50"
+                  }`}
+                >
+                  {selectedToolSlugs.includes(tool.slug) ? "In comparison" : "Add to compare"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalToolSlug(tool.slug)}
+                  className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-semibold text-neutral-900 hover:bg-neutral-50"
+                >
+                  View plans
+                </button>
               </div>
             </article>
           ))}
         </section>
 
-        <section id="comparison-table" className="mt-8 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-          <h2 className="mb-3 text-xl font-semibold">Comparison Table</h2>
+        <section id="comparison-table" className="mx-auto mt-16 max-w-5xl scroll-mt-28 surface-card overflow-hidden p-0">
+          <div className="border-b border-neutral-100 px-8 py-6 sm:px-10">
+            <h2 className="section-title">Comparison</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-600">
+              Sticky header on wide screens. Scroll horizontally on smaller viewports.
+            </p>
+          </div>
           {selectedTools.length === 0 ? (
-            <p className="text-sm text-slate-300">Add at least one tool to compare.</p>
+            <p className="px-8 py-10 text-sm text-neutral-600 sm:px-10">Add at least one tool to build a comparison.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="sticky top-0 bg-slate-800/90"><tr><th className="px-3 py-2">Feature</th>{selectedTools.map((tool) => <th key={tool.slug} className="px-3 py-2">{tool.name}</th>)}</tr></thead>
-                <tbody>{comparisonRows.map((row) => (<tr key={row.label} className="border-t border-white/10"><td className="px-3 py-2 font-medium">{row.label}</td>{row.values.map((value, index) => <td key={`${row.label}-${selectedTools[index]?.slug ?? index}`} className="px-3 py-2 text-slate-300">{value}</td>)}</tr>))}</tbody>
+                <thead className="sticky top-14 z-10 border-b border-neutral-200 bg-[#f5f5f7]/95 backdrop-blur-sm">
+                  <tr>
+                    <th className="whitespace-nowrap px-6 py-4 text-[13px] font-semibold text-neutral-900">Feature</th>
+                    {selectedTools.map((tool) => (
+                      <th key={tool.slug} className="whitespace-nowrap px-6 py-4 text-[13px] font-semibold text-neutral-900">
+                        {tool.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white">
+                  {comparisonRows.map((row) => (
+                    <tr key={row.label} className="border-t border-neutral-100">
+                      <td className="px-6 py-3.5 font-medium text-neutral-900">{row.label}</td>
+                      {row.values.map((value, index) => (
+                        <td key={`${row.label}-${selectedTools[index]?.slug ?? index}`} className="px-6 py-3.5 text-neutral-600">
+                          {value}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
           )}
         </section>
 
-        <section className="mt-8 rounded-2xl border border-white/10 bg-slate-900/70 p-5">
-          <h2 className="mb-3 text-xl font-semibold">Savings Insights</h2>
+        <section className="mx-auto mt-12 max-w-5xl surface-card p-8 sm:p-10">
+          <h2 className="section-title">Savings insights</h2>
           {overlapInsight ? (
-            <div className="space-y-2">
-              <p className="rounded-lg border border-orange-400/40 bg-orange-500/10 p-3 text-sm text-orange-200">{overlapInsight.message}</p>
-              <p className="rounded-lg border border-rose-400/40 bg-rose-500/10 p-3 text-sm text-rose-200">Estimated overlap waste: {formatUsd(overlapInsight.waste)}/month</p>
-              <p className="rounded-lg border border-emerald-400/40 bg-emerald-500/10 p-3 text-sm font-semibold text-emerald-200">Recommendation: Keep one, cancel two.</p>
+            <div className="mt-6 space-y-4">
+              <p className="rounded-2xl border border-amber-200/80 bg-amber-50/80 px-5 py-4 text-sm leading-relaxed text-amber-950">
+                {overlapInsight.message}
+              </p>
+              <p className="rounded-2xl border border-red-200/80 bg-red-50/60 px-5 py-4 text-sm font-medium text-red-950">
+                Estimated overlap waste: {formatUsd(overlapInsight.waste)}/month
+              </p>
+              <p className="rounded-2xl border border-emerald-200/80 bg-emerald-50/70 px-5 py-4 text-sm font-semibold text-emerald-950">
+                Recommendation: keep the best-fit product; pause redundant chat subscriptions.
+              </p>
             </div>
           ) : (
-            <p className="rounded-lg border border-emerald-400/40 bg-emerald-500/10 p-3 text-sm text-emerald-200">No strong overlap detected from selected tools.</p>
+            <p className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50/80 px-5 py-4 text-sm text-neutral-700">
+              No strong overlap signal from your current selection. Add another chat assistant to test redundancy.
+            </p>
           )}
         </section>
 
-        <section className="mt-8 rounded-2xl border border-white/10 bg-slate-900/70 p-5">
-          <h2 className="mb-3 text-xl font-semibold">Subscription Calculator</h2>
-          <div className="space-y-3">
+        <section className="mx-auto mt-12 max-w-5xl surface-card p-8 sm:p-10">
+          <h2 className="section-title">Subscription calculator</h2>
+          <p className="mt-2 max-w-2xl text-sm text-neutral-600">
+            Line items use catalog prices. Usage-based rows show as custom until you add usage estimates.
+          </p>
+          <div className="mt-8 space-y-4">
             {calculatorRows.map((row) => {
               const tool = TOOL_DATA.find((entry) => entry.slug === row.toolSlug);
               const plan = tool ? getPlanByName(tool, row.planName) : undefined;
               return (
-                <div key={row.id} className="grid gap-2 sm:grid-cols-12">
-                  <select value={row.toolSlug} onChange={(event) => updateCalculatorTool(row.id, event.target.value)} className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm sm:col-span-4">{TOOL_DATA.map((toolEntry) => <option key={toolEntry.slug} value={toolEntry.slug}>{toolEntry.name}</option>)}</select>
-                  <select value={row.planName} onChange={(event) => updateCalculatorPlan(row.id, event.target.value)} className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm sm:col-span-4">{(tool?.plans ?? []).map((toolPlan) => <option key={`${row.id}-${toolPlan.name}`} value={toolPlan.name}>{toolPlan.name}</option>)}</select>
-                  <input readOnly value={typeof plan?.monthlyPrice === "number" ? `${formatUsd(Number(plan.monthlyPrice))}/month` : "Custom / usage"} className="rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-sm sm:col-span-3" />
-                  <button onClick={() => removeCalculatorRow(row.id)} className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200 sm:col-span-1">X</button>
+                <div key={row.id} className="grid gap-3 sm:grid-cols-12 sm:items-center">
+                  <select
+                    value={row.toolSlug}
+                    onChange={(event) => updateCalculatorTool(row.id, event.target.value)}
+                    className="input-product sm:col-span-4"
+                  >
+                    {TOOL_DATA.map((toolEntry) => (
+                      <option key={toolEntry.slug} value={toolEntry.slug}>
+                        {toolEntry.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={row.planName}
+                    onChange={(event) => updateCalculatorPlan(row.id, event.target.value)}
+                    className="input-product sm:col-span-4"
+                  >
+                    {(tool?.plans ?? []).map((toolPlan) => (
+                      <option key={`${row.id}-${toolPlan.name}`} value={toolPlan.name}>
+                        {toolPlan.name}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    readOnly
+                    value={typeof plan?.monthlyPrice === "number" ? `${formatUsd(Number(plan.monthlyPrice))}/month` : "Custom / usage"}
+                    className="input-product bg-neutral-50 sm:col-span-3"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeCalculatorRow(row.id)}
+                    className="rounded-full border border-neutral-200 py-2.5 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50 sm:col-span-1"
+                    aria-label="Remove row"
+                  >
+                    ×
+                  </button>
                 </div>
               );
             })}
-            <button onClick={addCalculatorRow} className="rounded-lg bg-indigo-500 px-3 py-2 text-sm font-semibold">+ Add Subscription</button>
+            <button type="button" onClick={addCalculatorRow} className="btn-secondary">
+              Add subscription
+            </button>
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            <p className="rounded-lg border border-white/10 bg-slate-800/60 p-3 text-sm">Total spend: {formatUsd(calculatorSummary.monthly)}/month</p>
-            <p className="rounded-lg border border-white/10 bg-slate-800/60 p-3 text-sm">Annual spend: {formatUsd(calculatorSummary.annual)}/year</p>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border border-neutral-100 bg-neutral-50/80 px-5 py-4">
+              <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">Monthly</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-neutral-900">{formatUsd(calculatorSummary.monthly)}</p>
+            </div>
+            <div className="rounded-2xl border border-neutral-100 bg-neutral-50/80 px-5 py-4">
+              <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">Annual</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-neutral-900">{formatUsd(calculatorSummary.annual)}</p>
+            </div>
           </div>
-          <p className="mt-3 rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">Savings suggestion: Switching to one chatbot + one coding assistant can reduce redundant spend by up to {formatUsd(Math.round(calculatorSummary.monthly * 0.3))}/month.</p>
+          <p className="mt-6 rounded-2xl border border-emerald-200/80 bg-emerald-50/60 px-5 py-4 text-sm leading-relaxed text-emerald-950">
+            A lean stack (one chat product + one coding assistant) often cuts redundant spend by up to{" "}
+            {formatUsd(Math.round(calculatorSummary.monthly * 0.3))}/month — validate against your real usage.
+          </p>
         </section>
 
-        <section className="mt-8 rounded-2xl border border-white/10 bg-slate-900/70 p-5">
-          <h2 className="mb-3 text-xl font-semibold">Smart Recommendations</h2>
-          <div className="mb-3"><label className="mb-1 block text-sm text-slate-300">Primary usage</label><select value={usageMode} onChange={(event) => setUsageMode(event.target.value as UsageMode)} className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm"><option value="coding">Coding</option><option value="writing">Writing</option><option value="mixed">Mixed</option></select></div>
-          <p className="rounded-lg border border-indigo-400/40 bg-indigo-500/10 p-3 text-sm text-indigo-100">{smartRecommendation}</p>
+        <section className="mx-auto mt-12 max-w-5xl surface-muted p-8 sm:p-10">
+          <h2 className="section-title">Recommendations</h2>
+          <div className="mt-6">
+            <label htmlFor="usage-mode" className="text-[13px] font-medium text-neutral-700">
+              Primary usage
+            </label>
+            <select
+              id="usage-mode"
+              value={usageMode}
+              onChange={(event) => setUsageMode(event.target.value as UsageMode)}
+              className="input-product mt-2 max-w-xs"
+            >
+              <option value="coding">Coding</option>
+              <option value="writing">Writing</option>
+              <option value="mixed">Mixed</option>
+            </select>
+          </div>
+          <p className="mt-6 rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-sm leading-relaxed text-neutral-700">
+            {smartRecommendation}
+          </p>
         </section>
       </main>
 
       {modalTool ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-slate-950 p-5">
-            <div className="mb-4 flex items-center justify-between"><h3 className="text-xl font-semibold">{modalTool.name} Plan Breakdown</h3><button onClick={() => setModalToolSlug(null)} className="rounded-lg bg-slate-800 px-3 py-1 text-sm">Close</button></div>
-            <div className="space-y-3">{modalTool.plans.map((plan) => (<div key={`${modalTool.slug}-${plan.name}`} className="rounded-xl border border-white/10 bg-slate-900/70 p-4"><h4 className="text-lg font-semibold">{plan.name}</h4><p className="text-sm text-slate-300">Monthly: {typeof plan.monthlyPrice === "number" ? formatUsd(Number(plan.monthlyPrice)) : "Custom / usage"}</p><ul className="mt-2 list-disc pl-5 text-sm text-slate-300">{plan.features.map((feature) => <li key={`${plan.name}-${feature}`}>{feature}</li>)}</ul></div>))}</div>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-6">
+          <div
+            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-neutral-200 bg-white shadow-2xl sm:rounded-3xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+          >
+            <div className="sticky top-0 flex items-center justify-between border-b border-neutral-100 bg-white/95 px-6 py-4 backdrop-blur-sm">
+              <h3 id="modal-title" className="text-lg font-semibold tracking-tight text-neutral-900">
+                {modalTool.name}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setModalToolSlug(null)}
+                className="rounded-full px-3 py-1.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100"
+              >
+                Close
+              </button>
+            </div>
+            <div className="space-y-4 p-6">
+              {modalTool.plans.map((plan) => (
+                <div key={`${modalTool.slug}-${plan.name}`} className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-5">
+                  <h4 className="text-base font-semibold text-neutral-900">{plan.name}</h4>
+                  <p className="mt-1 text-sm text-neutral-600">
+                    {typeof plan.monthlyPrice === "number" ? `${formatUsd(Number(plan.monthlyPrice))}/month` : "Custom / usage-based"}
+                  </p>
+                  <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-neutral-600">
+                    {plan.features.map((feature) => (
+                      <li key={`${plan.name}-${feature}`}>{feature}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       ) : null}
@@ -270,9 +481,9 @@ export default function CompareAiPlansPage(): ReactElement {
 
 function Stat({ label, value }: { label: string; value: string }): ReactElement {
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-900/70 p-3">
-      <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold">{value}</p>
+    <div className="rounded-2xl border border-neutral-100 bg-neutral-50/60 px-5 py-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">{label}</p>
+      <p className="mt-2 text-lg font-semibold tracking-tight text-neutral-900 tabular-nums">{value}</p>
     </div>
   );
 }

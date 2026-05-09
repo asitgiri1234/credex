@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 import { SUBSCRIPTION_PLANS, type SubscriptionPlan, type ToolPlanCatalog } from "@/lib/subscription-plans";
@@ -74,7 +75,6 @@ export default function Home(): ReactElement {
     setRunMessage("");
 
     try {
-      // Keep the frontend functional even before backend wiring is complete.
       await new Promise((resolve) => setTimeout(resolve, 700));
       setRunMessage("Audit ran successfully. Backend integration will now use this payload for result generation.");
     } catch {
@@ -96,56 +96,67 @@ export default function Home(): ReactElement {
   }, [toolRows]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
-        <section className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-600/30 via-slate-900 to-slate-950 p-8 shadow-2xl">
-          <p className="mb-3 inline-flex rounded-full border border-emerald-400/50 bg-emerald-500/10 px-3 py-1 text-xs font-semibold tracking-wide text-emerald-300">
-            Free AI Spend Audit Tool
+    <div className="min-h-screen">
+      <main className="mx-auto max-w-6xl px-5 pb-20 pt-14 sm:px-8 sm:pt-20">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="eyebrow">AI spend audit</p>
+          <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-neutral-900 sm:text-5xl sm:leading-[1.08]">
+            Are you on the wrong AI plan?
+          </h1>
+          <p className="mx-auto mt-5 max-w-xl text-pretty text-[17px] leading-relaxed text-neutral-600">
+            Map your subscriptions, see overlap risk, and estimate savings with numbers your finance team can defend.
           </p>
-          <h1 className="text-3xl font-semibold leading-tight sm:text-5xl">Stop overpaying for AI tools in 2 minutes.</h1>
-          <p className="mt-4 max-w-3xl text-sm text-slate-300 sm:text-base">
-            Enter your stack, see immediate monthly + annual savings, and get a defensible recommendation report your finance team can trust.
-          </p>
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            <StatCard label="Current monthly spend" value={`$${currentSpend.toLocaleString()}`} />
-            <StatCard label="Estimated monthly savings" value={`$${estimatedSavings.toLocaleString()}`} highlight />
-            <StatCard label="Estimated annual savings" value={`$${(estimatedSavings * 12).toLocaleString()}`} />
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link href="/compare-ai-plans" className="btn-secondary">
+              Compare plans
+            </Link>
+            <a href="#audit-form" className="text-sm font-medium text-neutral-900 underline decoration-neutral-300 underline-offset-4 transition hover:decoration-neutral-900">
+              Start audit
+            </a>
           </div>
-        </section>
+        </div>
 
-        <section className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-semibold">Audit Input</h2>
-            <button
-              type="button"
-              onClick={addTool}
-              className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400"
-            >
-              + Add Tool
+        <div className="mx-auto mt-16 grid max-w-4xl gap-4 sm:grid-cols-3">
+          <StatCard label="Current monthly spend" value={`$${currentSpend.toLocaleString()}`} />
+          <StatCard label="Estimated monthly savings" value={`$${estimatedSavings.toLocaleString()}`} emphasis />
+          <StatCard label="Estimated annual savings" value={`$${(estimatedSavings * 12).toLocaleString()}`} />
+        </div>
+
+        <section id="audit-form" className="mx-auto mt-20 max-w-4xl scroll-mt-24 surface-card p-8 sm:p-10">
+          <div className="flex flex-col gap-4 border-b border-neutral-100 pb-8 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="section-title">Your stack</h2>
+              <p className="mt-2 max-w-md text-sm leading-relaxed text-neutral-600">
+                Add each paid tool once. Plans and prices follow our catalog so totals stay consistent.
+              </p>
+            </div>
+            <button type="button" onClick={addTool} className="btn-secondary shrink-0">
+              Add tool
             </button>
           </div>
 
           <form
+            className="mt-8"
             onSubmit={(event) => {
               event.preventDefault();
               void runAudit();
             }}
           >
-            <div className="mb-6 grid gap-4 sm:grid-cols-2">
-              <Field label="Team Size">
+            <div className="grid gap-6 sm:grid-cols-2">
+              <Field label="Team size">
                 <input
                   value={teamSize}
                   onChange={(event) => setTeamSize(event.target.value)}
                   type="number"
                   min={1}
-                  className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 outline-none ring-indigo-500/70 focus:ring"
+                  className="input-product"
                 />
               </Field>
-              <Field label="Primary Use Case">
+              <Field label="Primary use case">
                 <select
                   value={useCase}
                   onChange={(event) => setUseCase(event.target.value as UseCase)}
-                  className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 outline-none ring-indigo-500/70 focus:ring"
+                  className="input-product"
                 >
                   <option value="coding">Coding</option>
                   <option value="writing">Writing</option>
@@ -156,95 +167,119 @@ export default function Home(): ReactElement {
               </Field>
             </div>
 
-            <div className="space-y-3">
-              <div className="hidden grid-cols-12 gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-slate-400 sm:grid">
-                <p className="sm:col-span-3">AI Tool</p>
-                <p className="sm:col-span-3">Subscription Type</p>
-                <p className="sm:col-span-2">Price (Monthly)</p>
-                <p className="sm:col-span-2">Quantity</p>
-                <p className="sm:col-span-2">Action</p>
+            <div className="mt-8 space-y-4">
+              <div className="hidden grid-cols-12 gap-4 px-1 sm:grid">
+                <p className="eyebrow sm:col-span-3">AI tool</p>
+                <p className="eyebrow sm:col-span-3">Plan</p>
+                <p className="eyebrow sm:col-span-2">Price</p>
+                <p className="eyebrow sm:col-span-2">Seats</p>
+                <p className="eyebrow sm:col-span-2 text-right">Remove</p>
               </div>
               {toolRows.map((row) => (
-                <div key={row.id} className="grid gap-2 rounded-2xl border border-white/10 bg-slate-900/70 p-3 sm:grid-cols-12">
-                  <Field label="AI Tool" className="sm:col-span-3">
-                  <select
-                    value={row.tool}
-                    onChange={(event) => updateToolWithPlanReset(row.id, event.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-2 text-sm"
-                  >
-                    {TOOL_OPTIONS.map((tool) => (
-                      <option key={tool} value={tool}>
-                        {tool}
-                      </option>
-                    ))}
-                  </select>
+                <div
+                  key={row.id}
+                  className="grid gap-4 rounded-2xl border border-neutral-100 bg-neutral-50/50 p-4 sm:grid-cols-12 sm:items-end sm:p-5"
+                >
+                  <Field label="AI tool" className="sm:col-span-3">
+                    <select
+                      value={row.tool}
+                      onChange={(event) => updateToolWithPlanReset(row.id, event.target.value)}
+                      className="input-product"
+                    >
+                      {TOOL_OPTIONS.map((tool) => (
+                        <option key={tool} value={tool}>
+                          {tool}
+                        </option>
+                      ))}
+                    </select>
                   </Field>
-                  <Field label="Subscription Type" className="sm:col-span-3">
-                  <select
-                    value={row.plan}
-                    onChange={(event) => updateTool(row.id, "plan", event.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-2 text-sm"
-                  >
-                    {(findCatalogByTool(row.tool)?.plans ?? []).map((plan) => (
-                      <option key={`${row.id}-${plan.name}`} value={plan.name}>
-                        {plan.name}
-                      </option>
-                    ))}
-                  </select>
+                  <Field label="Subscription" className="sm:col-span-3">
+                    <select
+                      value={row.plan}
+                      onChange={(event) => updateTool(row.id, "plan", event.target.value)}
+                      className="input-product"
+                    >
+                      {(findCatalogByTool(row.tool)?.plans ?? []).map((plan) => (
+                        <option key={`${row.id}-${plan.name}`} value={plan.name}>
+                          {plan.name}
+                        </option>
+                      ))}
+                    </select>
                   </Field>
-                  <Field label="Price (Monthly)" className="sm:col-span-2">
-                  <input
-                    value={
-                      getPlanForTool(row.tool, row.plan)?.monthlyPrice === null
-                        ? "Usage based / custom"
-                        : `$${getMonthlySpendForRow(row).toLocaleString()}`
-                    }
-                    readOnly
-                    className="w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-2 text-sm"
-                  />
+                  <Field label="Monthly (est.)" className="sm:col-span-2">
+                    <input
+                      value={
+                        getPlanForTool(row.tool, row.plan)?.monthlyPrice === null
+                          ? "Usage-based"
+                          : `$${getMonthlySpendForRow(row).toLocaleString()}`
+                      }
+                      readOnly
+                      className="input-product bg-neutral-100/80 text-neutral-700"
+                    />
                   </Field>
                   <Field label="Quantity" className="sm:col-span-2">
-                  <input
-                    value={row.seats}
-                    onChange={(event) => updateTool(row.id, "seats", event.target.value)}
-                    type="number"
-                    min={1}
-                    placeholder="Seats"
-                    className="w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-2 text-sm"
-                  />
+                    <input
+                      value={row.seats}
+                      onChange={(event) => updateTool(row.id, "seats", event.target.value)}
+                      type="number"
+                      min={1}
+                      className="input-product"
+                    />
                   </Field>
-                  <Field label="Action" className="sm:col-span-2">
-                  <button
-                    type="button"
-                    onClick={() => removeTool(row.id)}
-                    className="w-full rounded-lg border border-rose-500/50 bg-rose-500/10 px-3 py-2 text-sm text-rose-300 transition hover:bg-rose-500/20"
-                  >
-                    Remove
-                  </button>
-                  </Field>
+                  <div className="flex sm:col-span-2 sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => removeTool(row.id)}
+                      className="w-full rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 sm:w-auto"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
 
-            <button
-              type="submit"
-              disabled={isRunningAudit}
-              className="mt-6 w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-emerald-300"
-            >
-              {isRunningAudit ? "Running audit..." : "Run AI Spend Audit"}
+            <button type="submit" disabled={isRunningAudit} className="btn-primary mt-10 w-full sm:w-auto">
+              {isRunningAudit ? "Running audit…" : "Run spend audit"}
             </button>
+            {runMessage ? (
+              <p className="mt-4 text-sm text-neutral-600" role="status">
+                {runMessage}
+              </p>
+            ) : null}
           </form>
-          {runMessage ? <p className="mt-3 text-sm text-emerald-300">{runMessage}</p> : null}
         </section>
       </main>
     </div>
   );
 }
 
-function StatCard({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }): ReactElement {
-  return <div className={`rounded-2xl border p-4 ${highlight ? "border-emerald-400/40 bg-emerald-500/10" : "border-white/10 bg-white/5"}`}><p className="text-xs uppercase tracking-wide text-slate-300">{label}</p><p className="mt-2 text-2xl font-semibold">{value}</p></div>;
+function StatCard({
+  label,
+  value,
+  emphasis = false,
+}: {
+  label: string;
+  value: string;
+  emphasis?: boolean;
+}): ReactElement {
+  return (
+    <div
+      className={`surface-card px-5 py-6 ${
+        emphasis ? "ring-1 ring-neutral-900/5" : ""
+      }`}
+    >
+      <p className="eyebrow">{label}</p>
+      <p className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900 tabular-nums">{value}</p>
+    </div>
+  );
 }
 
 function Field({ label, children, className }: { label: string; children: ReactNode; className?: string }): ReactElement {
-  return <label className={`block text-sm ${className ?? ""}`}><span className="mb-1 block text-slate-300">{label}</span>{children}</label>;
+  return (
+    <label className={`block ${className ?? ""}`}>
+      <span className="mb-1.5 block text-[13px] font-medium text-neutral-700">{label}</span>
+      {children}
+    </label>
+  );
 }

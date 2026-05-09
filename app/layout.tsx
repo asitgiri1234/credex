@@ -6,6 +6,7 @@ import "./globals.css";
 const interSans = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const robotoMono = Roboto_Mono({
@@ -28,9 +29,9 @@ export default function RootLayout({
       lang="en"
       className={`${interSans.variable} ${robotoMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-950">
+      <body className="min-h-full flex flex-col bg-[#f5f5f7] text-neutral-900 antialiased [font-feature-settings:'ss01']">
         <SiteHeader />
-        {children}
+        <div className="flex-1">{children}</div>
       </body>
     </html>
   );

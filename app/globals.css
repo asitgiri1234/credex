@@ -128,3 +128,28 @@
     @apply font-sans;
   }
 }
+
+/* Editorial product UI — neutral surfaces, tight type scale */
+@layer utilities {
+  .surface-card {
+    @apply rounded-2xl border border-neutral-200/90 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)];
+  }
+  .surface-muted {
+    @apply rounded-2xl border border-neutral-200/80 bg-neutral-50/80;
+  }
+  .input-product {
+    @apply w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-900 shadow-sm transition placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-neutral-800 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 shadow-sm transition hover:border-neutral-400 hover:bg-neutral-50;
+  }
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-500;
+  }
+  .section-title {
+    @apply text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl;
+  }
+}
