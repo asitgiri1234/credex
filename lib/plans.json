@@ -2,7 +2,6 @@
   {
     "name": "Cursor",
     "slug": "cursor",
-    "logo": "⌨️",
     "category": "IDE assistant",
     "type": "coding-assistant",
     "apiBased": false,
@@ -23,7 +22,6 @@
   {
     "name": "OpenAI API",
     "slug": "openai-api",
-    "logo": "🧠",
     "category": "API",
     "type": "api",
     "apiBased": true,
@@ -42,7 +40,6 @@
   {
     "name": "Claude API",
     "slug": "claude-api",
-    "logo": "🤖",
     "category": "API",
     "type": "api",
     "apiBased": true,
@@ -61,7 +58,6 @@
   {
     "name": "Windsurf",
     "slug": "windsurf",
-    "logo": "🌊",
     "category": "IDE assistant",
     "type": "coding-assistant",
     "apiBased": false,
@@ -81,7 +77,6 @@
   {
     "name": "GitHub Copilot",
     "slug": "github-copilot",
-    "logo": "🐙",
     "category": "IDE assistant",
     "type": "coding-assistant",
     "apiBased": false,
@@ -101,7 +96,6 @@
   {
     "name": "Claude",
     "slug": "claude",
-    "logo": "📝",
     "category": "Chat assistant",
     "type": "chatbot",
     "apiBased": false,
@@ -122,7 +116,6 @@
   {
     "name": "ChatGPT",
     "slug": "chatgpt",
-    "logo": "💬",
     "category": "Chat assistant",
     "type": "chatbot",
     "apiBased": false,
@@ -143,7 +136,6 @@
   {
     "name": "Gemini",
     "slug": "gemini",
-    "logo": "✨",
     "category": "Chat assistant",
     "type": "chatbot",
     "apiBased": false,

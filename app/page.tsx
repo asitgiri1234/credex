@@ -96,21 +96,24 @@ export default function Home(): ReactElement {
   }, [toolRows]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-6xl px-5 pb-20 pt-14 sm:px-8 sm:pt-20">
         <div className="mx-auto max-w-3xl text-center">
           <p className="eyebrow">AI spend audit</p>
-          <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-neutral-900 sm:text-5xl sm:leading-[1.08]">
+          <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl sm:leading-[1.08]">
             Are you on the wrong AI plan?
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-pretty text-[17px] leading-relaxed text-neutral-600">
+          <p className="mx-auto mt-5 max-w-xl text-pretty text-[17px] leading-relaxed text-muted-foreground">
             Map your subscriptions, see overlap risk, and estimate savings with numbers your finance team can defend.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link href="/compare-ai-plans" className="btn-secondary">
               Compare plans
             </Link>
-            <a href="#audit-form" className="text-sm font-medium text-neutral-900 underline decoration-neutral-300 underline-offset-4 transition hover:decoration-neutral-900">
+            <a
+              href="#audit-form"
+              className="text-sm font-medium text-foreground underline decoration-border underline-offset-4 transition hover:decoration-foreground"
+            >
               Start audit
             </a>
           </div>
@@ -123,10 +126,10 @@ export default function Home(): ReactElement {
         </div>
 
         <section id="audit-form" className="mx-auto mt-20 max-w-4xl scroll-mt-24 surface-card p-8 sm:p-10">
-          <div className="flex flex-col gap-4 border-b border-neutral-100 pb-8 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-4 border-b border-border pb-8 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="section-title">Your stack</h2>
-              <p className="mt-2 max-w-md text-sm leading-relaxed text-neutral-600">
+              <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
                 Add each paid tool once. Plans and prices follow our catalog so totals stay consistent.
               </p>
             </div>
@@ -178,7 +181,7 @@ export default function Home(): ReactElement {
               {toolRows.map((row) => (
                 <div
                   key={row.id}
-                  className="grid gap-4 rounded-2xl border border-neutral-100 bg-neutral-50/50 p-4 sm:grid-cols-12 sm:items-end sm:p-5"
+                  className="grid gap-4 rounded-2xl border border-border bg-muted/25 p-4 sm:grid-cols-12 sm:items-end sm:p-5"
                 >
                   <Field label="AI tool" className="sm:col-span-3">
                     <select
@@ -214,7 +217,7 @@ export default function Home(): ReactElement {
                           : `$${getMonthlySpendForRow(row).toLocaleString()}`
                       }
                       readOnly
-                      className="input-product bg-neutral-100/80 text-neutral-700"
+                      className="input-product bg-muted/40 text-muted-foreground"
                     />
                   </Field>
                   <Field label="Quantity" className="sm:col-span-2">
@@ -230,7 +233,7 @@ export default function Home(): ReactElement {
                     <button
                       type="button"
                       onClick={() => removeTool(row.id)}
-                      className="w-full rounded-full border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 sm:w-auto"
+                      className="w-full rounded-full border border-border bg-secondary px-4 py-2.5 text-sm font-medium text-secondary-foreground transition hover:bg-muted sm:w-auto"
                     >
                       Remove
                     </button>
@@ -243,7 +246,7 @@ export default function Home(): ReactElement {
               {isRunningAudit ? "Running audit…" : "Run spend audit"}
             </button>
             {runMessage ? (
-              <p className="mt-4 text-sm text-neutral-600" role="status">
+              <p className="mt-4 text-sm text-muted-foreground" role="status">
                 {runMessage}
               </p>
             ) : null}
@@ -265,12 +268,10 @@ function StatCard({
 }): ReactElement {
   return (
     <div
-      className={`surface-card px-5 py-6 ${
-        emphasis ? "ring-1 ring-neutral-900/5" : ""
-      }`}
+      className={`surface-card px-5 py-6 ${emphasis ? "ring-1 ring-border" : ""}`}
     >
       <p className="eyebrow">{label}</p>
-      <p className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900 tabular-nums">{value}</p>
+      <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground tabular-nums">{value}</p>
     </div>
   );
 }
@@ -278,7 +279,7 @@ function StatCard({
 function Field({ label, children, className }: { label: string; children: ReactNode; className?: string }): ReactElement {
   return (
     <label className={`block ${className ?? ""}`}>
-      <span className="mb-1.5 block text-[13px] font-medium text-neutral-700">{label}</span>
+      <span className="mb-1.5 block text-[13px] font-medium text-muted-foreground">{label}</span>
       {children}
     </label>
   );

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { ReactElement } from "react";
+import { ToolLogo } from "@/components/compare-ai-plans/tool-logo";
 import plansData from "@/lib/plans.json";
 
 type PricingFilter = "all" | "free" | "under-10" | "under-20" | "premium";
@@ -19,7 +20,6 @@ interface PlanEntry {
 interface ToolEntry {
   name: string;
   slug: string;
-  logo: string;
   category: string;
   type: "api" | "coding-assistant" | "chatbot";
   apiBased: boolean;
@@ -159,14 +159,14 @@ export default function CompareAiPlansPage(): ReactElement {
   const removeCalculatorRow = (id: string): void => setCalculatorRows((current) => current.filter((row) => row.id !== id));
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background text-foreground antialiased">
       <main className="mx-auto max-w-7xl px-5 pb-24 pt-14 sm:px-8 sm:pt-16">
         <div className="mx-auto max-w-3xl text-center">
           <p className="eyebrow">Subscription optimizer</p>
-          <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-neutral-900 sm:text-5xl sm:leading-[1.08]">
+          <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl sm:leading-[1.08]">
             Compare AI plans with intent
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-pretty text-[17px] leading-relaxed text-neutral-600">
+          <p className="mx-auto mt-5 max-w-xl text-pretty text-[17px] leading-relaxed text-muted-foreground">
             Search tools, filter by how you work, and see overlap before you commit to another subscription.
           </p>
         </div>
@@ -244,21 +244,19 @@ export default function CompareAiPlansPage(): ReactElement {
           {filteredTools.map((tool) => (
             <article key={tool.slug} className="surface-card flex flex-col p-6">
               <div className="flex items-start gap-3">
-                <span className="text-2xl leading-none" aria-hidden>
-                  {tool.logo}
-                </span>
+                <ToolLogo slug={tool.slug} name={tool.name} />
                 <div className="min-w-0">
-                  <h3 className="text-[17px] font-semibold tracking-tight text-neutral-900">{tool.name}</h3>
-                  <p className="mt-1 text-xs font-medium text-neutral-500">{tool.category}</p>
+                  <h3 className="text-[17px] font-semibold tracking-tight text-foreground">{tool.name}</h3>
+                  <p className="mt-1 text-xs font-medium text-muted-foreground">{tool.category}</p>
                 </div>
               </div>
-              <p className="mt-4 text-sm text-neutral-600">
+              <p className="mt-4 text-sm text-muted-foreground">
                 From{" "}
                 {getCheapestPaidPlan(tool)?.monthlyPrice
                   ? `${formatUsd(Number(getCheapestPaidPlan(tool)?.monthlyPrice))}/month`
                   : "custom pricing"}
               </p>
-              <p className="mt-1 text-sm text-neutral-500">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Free tier: {tool.plans.some((plan) => plan.monthlyPrice === 0) ? "Yes" : "No"}
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
@@ -267,8 +265,8 @@ export default function CompareAiPlansPage(): ReactElement {
                   onClick={() => toggleCompareTool(tool.slug)}
                   className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
                     selectedToolSlugs.includes(tool.slug)
-                      ? "bg-neutral-900 text-white"
-                      : "border border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50"
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border bg-background text-foreground hover:bg-muted"
                   }`}
                 >
                   {selectedToolSlugs.includes(tool.slug) ? "In comparison" : "Add to compare"}
@@ -276,7 +274,7 @@ export default function CompareAiPlansPage(): ReactElement {
                 <button
                   type="button"
                   onClick={() => setModalToolSlug(tool.slug)}
-                  className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-semibold text-neutral-900 hover:bg-neutral-50"
+                  className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted"
                 >
                   View plans
                 </button>
@@ -286,33 +284,39 @@ export default function CompareAiPlansPage(): ReactElement {
         </section>
 
         <section id="comparison-table" className="mx-auto mt-16 max-w-5xl scroll-mt-28 surface-card overflow-hidden p-0">
-          <div className="border-b border-neutral-100 px-8 py-6 sm:px-10">
+          <div className="border-b border-border px-8 py-6 sm:px-10">
             <h2 className="section-title">Comparison</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-600">
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
               Sticky header on wide screens. Scroll horizontally on smaller viewports.
             </p>
           </div>
           {selectedTools.length === 0 ? (
-            <p className="px-8 py-10 text-sm text-neutral-600 sm:px-10">Add at least one tool to build a comparison.</p>
+            <p className="px-8 py-10 text-sm text-muted-foreground sm:px-10">Add at least one tool to build a comparison.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="sticky top-14 z-10 border-b border-neutral-200 bg-[#f5f5f7]/95 backdrop-blur-sm">
+                <thead className="sticky top-14 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
                   <tr>
-                    <th className="whitespace-nowrap px-6 py-4 text-[13px] font-semibold text-neutral-900">Feature</th>
+                    <th className="whitespace-nowrap px-6 py-4 text-[13px] font-semibold text-foreground">Feature</th>
                     {selectedTools.map((tool) => (
-                      <th key={tool.slug} className="whitespace-nowrap px-6 py-4 text-[13px] font-semibold text-neutral-900">
-                        {tool.name}
+                      <th
+                        key={tool.slug}
+                        className="whitespace-nowrap px-6 py-4 text-[13px] font-semibold text-foreground"
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          <ToolLogo slug={tool.slug} name={tool.name} compact />
+                          <span>{tool.name}</span>
+                        </span>
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="bg-white">
+                <tbody className="bg-background/50">
                   {comparisonRows.map((row) => (
-                    <tr key={row.label} className="border-t border-neutral-100">
-                      <td className="px-6 py-3.5 font-medium text-neutral-900">{row.label}</td>
+                    <tr key={row.label} className="border-t border-border">
+                      <td className="px-6 py-3.5 font-medium text-foreground">{row.label}</td>
                       {row.values.map((value, index) => (
-                        <td key={`${row.label}-${selectedTools[index]?.slug ?? index}`} className="px-6 py-3.5 text-neutral-600">
+                        <td key={`${row.label}-${selectedTools[index]?.slug ?? index}`} className="px-6 py-3.5 text-muted-foreground">
                           {value}
                         </td>
                       ))}
@@ -328,18 +332,18 @@ export default function CompareAiPlansPage(): ReactElement {
           <h2 className="section-title">Savings insights</h2>
           {overlapInsight ? (
             <div className="mt-6 space-y-4">
-              <p className="rounded-2xl border border-amber-200/80 bg-amber-50/80 px-5 py-4 text-sm leading-relaxed text-amber-950">
+              <p className="rounded-2xl border border-amber-500/35 bg-amber-950/40 px-5 py-4 text-sm leading-relaxed text-amber-100/90">
                 {overlapInsight.message}
               </p>
-              <p className="rounded-2xl border border-red-200/80 bg-red-50/60 px-5 py-4 text-sm font-medium text-red-950">
+              <p className="rounded-2xl border border-red-500/35 bg-red-950/35 px-5 py-4 text-sm font-medium text-red-200">
                 Estimated overlap waste: {formatUsd(overlapInsight.waste)}/month
               </p>
-              <p className="rounded-2xl border border-emerald-200/80 bg-emerald-50/70 px-5 py-4 text-sm font-semibold text-emerald-950">
+              <p className="rounded-2xl border border-emerald-500/35 bg-emerald-950/35 px-5 py-4 text-sm font-semibold text-emerald-100">
                 Recommendation: keep the best-fit product; pause redundant chat subscriptions.
               </p>
             </div>
           ) : (
-            <p className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50/80 px-5 py-4 text-sm text-neutral-700">
+            <p className="mt-6 rounded-2xl border border-border bg-muted/30 px-5 py-4 text-sm text-muted-foreground">
               No strong overlap signal from your current selection. Add another chat assistant to test redundancy.
             </p>
           )}
@@ -347,7 +351,7 @@ export default function CompareAiPlansPage(): ReactElement {
 
         <section className="mx-auto mt-12 max-w-5xl surface-card p-8 sm:p-10">
           <h2 className="section-title">Subscription calculator</h2>
-          <p className="mt-2 max-w-2xl text-sm text-neutral-600">
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
             Line items use catalog prices. Usage-based rows show as custom until you add usage estimates.
           </p>
           <div className="mt-8 space-y-4">
@@ -381,12 +385,12 @@ export default function CompareAiPlansPage(): ReactElement {
                   <input
                     readOnly
                     value={typeof plan?.monthlyPrice === "number" ? `${formatUsd(Number(plan.monthlyPrice))}/month` : "Custom / usage"}
-                    className="input-product bg-neutral-50 sm:col-span-3"
+                    className="input-product bg-muted/40 text-muted-foreground sm:col-span-3"
                   />
                   <button
                     type="button"
                     onClick={() => removeCalculatorRow(row.id)}
-                    className="rounded-full border border-neutral-200 py-2.5 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50 sm:col-span-1"
+                    className="rounded-full border border-border py-2.5 text-sm font-medium text-muted-foreground transition hover:bg-muted sm:col-span-1"
                     aria-label="Remove row"
                   >
                     ×
@@ -399,16 +403,16 @@ export default function CompareAiPlansPage(): ReactElement {
             </button>
           </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-neutral-100 bg-neutral-50/80 px-5 py-4">
-              <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">Monthly</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-neutral-900">{formatUsd(calculatorSummary.monthly)}</p>
+            <div className="rounded-2xl border border-border bg-muted/25 px-5 py-4">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Monthly</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{formatUsd(calculatorSummary.monthly)}</p>
             </div>
-            <div className="rounded-2xl border border-neutral-100 bg-neutral-50/80 px-5 py-4">
-              <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">Annual</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-neutral-900">{formatUsd(calculatorSummary.annual)}</p>
+            <div className="rounded-2xl border border-border bg-muted/25 px-5 py-4">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Annual</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{formatUsd(calculatorSummary.annual)}</p>
             </div>
           </div>
-          <p className="mt-6 rounded-2xl border border-emerald-200/80 bg-emerald-50/60 px-5 py-4 text-sm leading-relaxed text-emerald-950">
+          <p className="mt-6 rounded-2xl border border-emerald-500/35 bg-emerald-950/30 px-5 py-4 text-sm leading-relaxed text-emerald-100/90">
             A lean stack (one chat product + one coding assistant) often cuts redundant spend by up to{" "}
             {formatUsd(Math.round(calculatorSummary.monthly * 0.3))}/month — validate against your real usage.
           </p>
@@ -417,7 +421,7 @@ export default function CompareAiPlansPage(): ReactElement {
         <section className="mx-auto mt-12 max-w-5xl surface-muted p-8 sm:p-10">
           <h2 className="section-title">Recommendations</h2>
           <div className="mt-6">
-            <label htmlFor="usage-mode" className="text-[13px] font-medium text-neutral-700">
+            <label htmlFor="usage-mode" className="text-[13px] font-medium text-muted-foreground">
               Primary usage
             </label>
             <select
@@ -431,40 +435,41 @@ export default function CompareAiPlansPage(): ReactElement {
               <option value="mixed">Mixed</option>
             </select>
           </div>
-          <p className="mt-6 rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-sm leading-relaxed text-neutral-700">
+          <p className="mt-6 rounded-2xl border border-border bg-card px-5 py-4 text-sm leading-relaxed text-muted-foreground">
             {smartRecommendation}
           </p>
         </section>
       </main>
 
       {modalTool ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-6">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-6">
           <div
-            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-neutral-200 bg-white shadow-2xl sm:rounded-3xl"
+            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-border bg-card text-card-foreground shadow-2xl sm:rounded-3xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
           >
-            <div className="sticky top-0 flex items-center justify-between border-b border-neutral-100 bg-white/95 px-6 py-4 backdrop-blur-sm">
-              <h3 id="modal-title" className="text-lg font-semibold tracking-tight text-neutral-900">
-                {modalTool.name}
+            <div className="sticky top-0 flex items-center justify-between gap-3 border-b border-border bg-card/95 px-6 py-4 backdrop-blur-sm">
+              <h3 id="modal-title" className="flex min-w-0 items-center gap-3 text-lg font-semibold tracking-tight text-foreground">
+                <ToolLogo slug={modalTool.slug} name={modalTool.name} />
+                <span className="truncate">{modalTool.name}</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setModalToolSlug(null)}
-                className="rounded-full px-3 py-1.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100"
+                className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 Close
               </button>
             </div>
             <div className="space-y-4 p-6">
               {modalTool.plans.map((plan) => (
-                <div key={`${modalTool.slug}-${plan.name}`} className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-5">
-                  <h4 className="text-base font-semibold text-neutral-900">{plan.name}</h4>
-                  <p className="mt-1 text-sm text-neutral-600">
+                <div key={`${modalTool.slug}-${plan.name}`} className="rounded-2xl border border-border bg-muted/20 p-5">
+                  <h4 className="text-base font-semibold text-foreground">{plan.name}</h4>
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {typeof plan.monthlyPrice === "number" ? `${formatUsd(Number(plan.monthlyPrice))}/month` : "Custom / usage-based"}
                   </p>
-                  <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-neutral-600">
+                  <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                     {plan.features.map((feature) => (
                       <li key={`${plan.name}-${feature}`}>{feature}</li>
                     ))}
@@ -481,9 +486,9 @@ export default function CompareAiPlansPage(): ReactElement {
 
 function Stat({ label, value }: { label: string; value: string }): ReactElement {
   return (
-    <div className="rounded-2xl border border-neutral-100 bg-neutral-50/60 px-5 py-4">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">{label}</p>
-      <p className="mt-2 text-lg font-semibold tracking-tight text-neutral-900 tabular-nums">{value}</p>
+    <div className="rounded-2xl border border-border bg-muted/25 px-5 py-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+      <p className="mt-2 text-lg font-semibold tracking-tight text-foreground tabular-nums">{value}</p>
     </div>
   );
 }
