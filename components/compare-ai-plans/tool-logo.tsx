@@ -15,6 +15,17 @@ const SIMPLE_ICON_BY_TOOL_SLUG: Record<string, string> = {
   "github-copilot": "githubcopilot",
   claude: "anthropic",
   gemini: "googlegemini",
+  perplexity: "perplexity",
+  "notion-ai": "notion",
+  midjourney: "midjourney",
+  runway: "runway",
+  elevenlabs: "elevenlabs",
+  jasper: "jasper",
+  replit: "replit",
+  v0: "vercel",
+  "bolt-new": "stackblitz",
+  lovable: "github", // no stable Simple Icon yet — neutral mark
+  tabnine: "tabnine",
 };
 
 export interface ToolLogoProps {

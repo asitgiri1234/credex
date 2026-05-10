@@ -152,5 +152,210 @@
       { "name": "Ultra", "monthlyPrice": 25, "yearlyPrice": 252, "features": ["Higher usage caps"] },
       { "name": "Enterprise", "monthlyPrice": null, "yearlyPrice": null, "features": ["Enterprise controls"] }
     ]
+  },
+  {
+    "name": "Perplexity",
+    "slug": "perplexity",
+    "category": "Research assistant",
+    "type": "chatbot",
+    "apiBased": false,
+    "contextWindow": "Varies by model",
+    "requestLimits": "Query caps by tier",
+    "apiPricing": "Separate API offering",
+    "teamPlan": true,
+    "enterprise": true,
+    "capabilities": ["web-browsing", "large-context", "file-upload"],
+    "bestFor": "Research-heavy knowledge workers",
+    "plans": [
+      { "name": "Free", "monthlyPrice": 0, "yearlyPrice": 0, "features": ["Limited research queries"] },
+      { "name": "Pro", "monthlyPrice": 20, "yearlyPrice": 200, "features": ["Higher limits", "Premium models"] },
+      { "name": "Enterprise", "monthlyPrice": null, "yearlyPrice": null, "features": ["Admin controls"] }
+    ]
+  },
+  {
+    "name": "Notion AI",
+    "slug": "notion-ai",
+    "category": "Workspace AI",
+    "type": "chatbot",
+    "apiBased": false,
+    "contextWindow": "Workspace scoped",
+    "requestLimits": "Workspace policy",
+    "apiPricing": "Bundled in workspace plans",
+    "teamPlan": true,
+    "enterprise": true,
+    "capabilities": ["file-upload", "code-completion"],
+    "bestFor": "Docs-first teams",
+    "plans": [
+      { "name": "Free", "monthlyPrice": 0, "yearlyPrice": 0, "features": ["Starter workspace"] },
+      { "name": "Plus", "monthlyPrice": 12, "yearlyPrice": 120, "features": ["Personal AI add-on modeled"] },
+      { "name": "Business", "monthlyPrice": 20, "yearlyPrice": 216, "features": ["Team workspace + AI"] }
+    ]
+  },
+  {
+    "name": "Midjourney",
+    "slug": "midjourney",
+    "category": "Image generation",
+    "type": "chatbot",
+    "apiBased": false,
+    "contextWindow": "N/A",
+    "requestLimits": "GPU fast hours",
+    "apiPricing": "Discord / web app subscription",
+    "teamPlan": false,
+    "enterprise": false,
+    "capabilities": ["image-generation"],
+    "bestFor": "Creative and marketing visuals",
+    "plans": [
+      { "name": "Basic", "monthlyPrice": 10, "yearlyPrice": 120, "features": ["Entry GPU time"] },
+      { "name": "Standard", "monthlyPrice": 30, "yearlyPrice": 360, "features": ["More GPU time"] },
+      { "name": "Pro", "monthlyPrice": 60, "yearlyPrice": 720, "features": ["Highest consumer tier"] }
+    ]
+  },
+  {
+    "name": "Runway",
+    "slug": "runway",
+    "category": "Video AI",
+    "type": "chatbot",
+    "apiBased": false,
+    "contextWindow": "Clip dependent",
+    "requestLimits": "Credit based",
+    "apiPricing": "API separate",
+    "teamPlan": true,
+    "enterprise": true,
+    "capabilities": ["image-generation", "file-upload"],
+    "bestFor": "Video and motion workflows",
+    "plans": [
+      { "name": "Basic", "monthlyPrice": 15, "yearlyPrice": 180, "features": ["Starter credits"] },
+      { "name": "Standard", "monthlyPrice": 35, "yearlyPrice": 420, "features": ["More credits"] },
+      { "name": "Pro", "monthlyPrice": 95, "yearlyPrice": 1140, "features": ["Pro credits"] }
+    ]
+  },
+  {
+    "name": "ElevenLabs",
+    "slug": "elevenlabs",
+    "category": "Voice AI",
+    "type": "api",
+    "apiBased": true,
+    "contextWindow": "N/A",
+    "requestLimits": "Character quotas",
+    "apiPricing": "Usage tiers",
+    "teamPlan": true,
+    "enterprise": true,
+    "capabilities": ["voice"],
+    "bestFor": "Voiceovers and agents",
+    "plans": [
+      { "name": "Free", "monthlyPrice": 0, "yearlyPrice": 0, "features": ["Low character cap"] },
+      { "name": "Starter", "monthlyPrice": 5, "yearlyPrice": 60, "features": ["Commercial on paid tiers"] },
+      { "name": "Creator", "monthlyPrice": 22, "yearlyPrice": 264, "features": ["Higher quota"] }
+    ]
+  },
+  {
+    "name": "Jasper",
+    "slug": "jasper",
+    "category": "Marketing writing",
+    "type": "chatbot",
+    "apiBased": false,
+    "contextWindow": "Long-form",
+    "requestLimits": "Plan quotas",
+    "apiPricing": "Enterprise API optional",
+    "teamPlan": true,
+    "enterprise": true,
+    "capabilities": ["file-upload", "web-browsing"],
+    "bestFor": "GTM and content teams",
+    "plans": [
+      { "name": "Creator", "monthlyPrice": 49, "yearlyPrice": 468, "features": ["Single-seat marketing"] },
+      { "name": "Teams", "monthlyPrice": 125, "yearlyPrice": 1188, "features": ["Shared brand voice"] }
+    ]
+  },
+  {
+    "name": "Replit",
+    "slug": "replit",
+    "category": "Cloud IDE",
+    "type": "coding-assistant",
+    "apiBased": false,
+    "contextWindow": "Project scoped",
+    "requestLimits": "Compute units",
+    "apiPricing": "Deployments billed separately",
+    "teamPlan": true,
+    "enterprise": true,
+    "capabilities": ["code-completion", "file-upload"],
+    "bestFor": "Rapid prototyping teams",
+    "plans": [
+      { "name": "Free", "monthlyPrice": 0, "yearlyPrice": 0, "features": ["Public repls"] },
+      { "name": "Core", "monthlyPrice": 20, "yearlyPrice": 220, "features": ["AI agent access"] },
+      { "name": "Teams", "monthlyPrice": 40, "yearlyPrice": 480, "features": ["Org seats"] }
+    ]
+  },
+  {
+    "name": "v0",
+    "slug": "v0",
+    "category": "UI generation",
+    "type": "coding-assistant",
+    "apiBased": false,
+    "contextWindow": "Component scoped",
+    "requestLimits": "Generation credits",
+    "apiPricing": "Vercel ecosystem",
+    "teamPlan": false,
+    "enterprise": true,
+    "capabilities": ["code-completion", "file-upload"],
+    "bestFor": "Frontend iteration",
+    "plans": [
+      { "name": "Free", "monthlyPrice": 0, "yearlyPrice": 0, "features": ["Limited gens"] },
+      { "name": "Premium", "monthlyPrice": 20, "yearlyPrice": 200, "features": ["Higher limits"] }
+    ]
+  },
+  {
+    "name": "Bolt.new",
+    "slug": "bolt-new",
+    "category": "Full-stack preview",
+    "type": "coding-assistant",
+    "apiBased": false,
+    "contextWindow": "Repo scoped",
+    "requestLimits": "Runtime minutes",
+    "apiPricing": "Hosted previews",
+    "teamPlan": false,
+    "enterprise": false,
+    "capabilities": ["code-completion", "file-upload"],
+    "bestFor": "Prompt-to-app experiments",
+    "plans": [
+      { "name": "Free", "monthlyPrice": 0, "yearlyPrice": 0, "features": ["Public previews"] },
+      { "name": "Pro", "monthlyPrice": 25, "yearlyPrice": 250, "features": ["More compute"] }
+    ]
+  },
+  {
+    "name": "Lovable",
+    "slug": "lovable",
+    "category": "App builder",
+    "type": "coding-assistant",
+    "apiBased": false,
+    "contextWindow": "Project scoped",
+    "requestLimits": "Project quotas",
+    "apiPricing": "Hosting bundles",
+    "teamPlan": true,
+    "enterprise": false,
+    "capabilities": ["code-completion", "file-upload"],
+    "bestFor": "No-code to low-code builders",
+    "plans": [
+      { "name": "Free", "monthlyPrice": 0, "yearlyPrice": 0, "features": ["Starter projects"] },
+      { "name": "Pro", "monthlyPrice": 25, "yearlyPrice": 250, "features": ["Custom domains"] }
+    ]
+  },
+  {
+    "name": "Tabnine",
+    "slug": "tabnine",
+    "category": "IDE assistant",
+    "type": "coding-assistant",
+    "apiBased": false,
+    "contextWindow": "IDE dependent",
+    "requestLimits": "Fair use",
+    "apiPricing": "Enterprise deployment",
+    "teamPlan": true,
+    "enterprise": true,
+    "capabilities": ["code-completion"],
+    "bestFor": "Privacy-conscious engineering orgs",
+    "plans": [
+      { "name": "Free", "monthlyPrice": 0, "yearlyPrice": 0, "features": ["Short completions"] },
+      { "name": "Pro", "monthlyPrice": 12, "yearlyPrice": 120, "features": ["Longer completions"] },
+      { "name": "Enterprise", "monthlyPrice": null, "yearlyPrice": null, "features": ["SSO + audit"] }
+    ]
   }
 ]

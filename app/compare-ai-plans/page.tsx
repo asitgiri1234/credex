@@ -1,8 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import { ToolLogo } from "@/components/compare-ai-plans/tool-logo";
+import { OFFICIAL_PRICING_SOURCES } from "@/lib/pricing-sources";
+import {
+  compareModeToUseCase,
+  loadCredexStack,
+  mergeCalculatorWithPreviousSeats,
+  saveCredexStack,
+  toolDisplayNameToSlug,
+} from "@/lib/stack-sync";
 import plansData from "@/lib/plans.json";
 
 type PricingFilter = "all" | "free" | "under-10" | "under-20" | "premium";
@@ -52,7 +61,17 @@ const getPlanByName = (tool: ToolEntry, planName: string): PlanEntry | undefined
 
 const formatUsd = (amount: number): string => `$${amount.toLocaleString()}`;
 
+function getCalculatorRowMonthly(row: SubscriptionInput): number {
+  const tool = TOOL_DATA.find((entry) => entry.slug === row.toolSlug);
+  if (!tool) {
+    return 0;
+  }
+  const plan = getPlanByName(tool, row.planName);
+  return typeof plan?.monthlyPrice === "number" ? Number(plan.monthlyPrice) : 0;
+}
+
 export default function CompareAiPlansPage(): ReactElement {
+  const [storageReady, setStorageReady] = useState(false);
   const [search, setSearch] = useState("");
   const [pricingFilter, setPricingFilter] = useState<PricingFilter>("all");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
@@ -66,15 +85,77 @@ export default function CompareAiPlansPage(): ReactElement {
     { id: "sub-3", toolSlug: "cursor", planName: "Pro" },
   ]);
 
+  useEffect(() => {
+    const stack = loadCredexStack();
+    if (stack && stack.rows.length > 0) {
+      const mapped = stack.rows
+        .map((r) => {
+          const slug = toolDisplayNameToSlug(r.toolName);
+          if (!slug) {
+            return null;
+          }
+          const tool = TOOL_DATA.find((t) => t.slug === slug);
+          if (!tool) {
+            return null;
+          }
+          const planOk = tool.plans.some((p) => p.name === r.plan);
+          return {
+            id: crypto.randomUUID(),
+            toolSlug: tool.slug,
+            planName: planOk ? r.plan : tool.plans[0]?.name ?? "",
+          };
+        })
+        .filter((x): x is SubscriptionInput => x !== null);
+      if (mapped.length > 0) {
+        setCalculatorRows(mapped);
+      }
+      setUsageMode(stack.compareUsageMode);
+    }
+    setStorageReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!storageReady) {
+      return;
+    }
+    const prev = loadCredexStack();
+    saveCredexStack({
+      v: 2,
+      teamSize: prev?.teamSize ?? "5",
+      useCase: compareModeToUseCase(usageMode),
+      compareUsageMode: usageMode,
+      rows: mergeCalculatorWithPreviousSeats(calculatorRows, prev?.rows),
+    });
+  }, [calculatorRows, usageMode, storageReady]);
+
   const filteredTools = useMemo(() => {
-    let output = TOOL_DATA.filter((tool) => tool.name.toLowerCase().includes(search.toLowerCase()));
+    const q = search.trim().toLowerCase();
+    let output = TOOL_DATA.filter((tool) => {
+      if (!q) {
+        return true;
+      }
+      return (
+        tool.name.toLowerCase().includes(q) ||
+        tool.slug.toLowerCase().includes(q) ||
+        tool.category.toLowerCase().includes(q) ||
+        tool.bestFor.toLowerCase().includes(q)
+      );
+    });
     if (pricingFilter !== "all") {
       output = output.filter((tool) => {
         const cheapestPaid = getCheapestPaidPlan(tool)?.monthlyPrice;
-        if (pricingFilter === "free") return tool.plans.some((plan) => plan.monthlyPrice === 0);
-        if (typeof cheapestPaid !== "number") return false;
-        if (pricingFilter === "under-10") return cheapestPaid < 10;
-        if (pricingFilter === "under-20") return cheapestPaid < 20;
+        if (pricingFilter === "free") {
+          return tool.plans.some((plan) => plan.monthlyPrice === 0);
+        }
+        if (typeof cheapestPaid !== "number") {
+          return false;
+        }
+        if (pricingFilter === "under-10") {
+          return cheapestPaid < 10;
+        }
+        if (pricingFilter === "under-20") {
+          return cheapestPaid < 20;
+        }
         return cheapestPaid >= 20;
       });
     }
@@ -94,16 +175,37 @@ export default function CompareAiPlansPage(): ReactElement {
 
   const quickStats = useMemo(() => {
     const freePlans = TOOL_DATA.filter((tool) => tool.plans.some((plan) => plan.monthlyPrice === 0)).length;
-    const cheapest = TOOL_DATA.map((tool) => getCheapestPaidPlan(tool)?.monthlyPrice).filter((price): price is number => typeof price === "number").sort((a, b) => a - b)[0] ?? 0;
+    const cheapest =
+      TOOL_DATA.map((tool) => getCheapestPaidPlan(tool)?.monthlyPrice)
+        .filter((price): price is number => typeof price === "number")
+        .sort((a, b) => a - b)[0] ?? 0;
     return { totalTools: TOOL_DATA.length, cheapestPaid: cheapest, freePlans };
   }, []);
 
   const comparisonRows = useMemo(
     () => [
       { label: "Free Plan", values: selectedTools.map((tool) => (tool.plans.some((plan) => plan.monthlyPrice === 0) ? "Yes" : "No")) },
-      { label: "Cheapest Paid Plan", values: selectedTools.map((tool) => { const plan = getCheapestPaidPlan(tool); return plan ? `${plan.name} (${formatUsd(Number(plan.monthlyPrice))}/mo)` : "Custom only"; }) },
-      { label: "Monthly Cost", values: selectedTools.map((tool) => { const amount = getCheapestPaidPlan(tool)?.monthlyPrice; return typeof amount === "number" ? formatUsd(amount) : "Custom"; }) },
-      { label: "Annual Cost", values: selectedTools.map((tool) => { const amount = getCheapestPaidPlan(tool)?.yearlyPrice; return typeof amount === "number" ? `${formatUsd(amount)}/yr` : "N/A"; }) },
+      {
+        label: "Cheapest Paid Plan",
+        values: selectedTools.map((tool) => {
+          const plan = getCheapestPaidPlan(tool);
+          return plan ? `${plan.name} (${formatUsd(Number(plan.monthlyPrice))}/mo)` : "Custom only";
+        }),
+      },
+      {
+        label: "Monthly Cost",
+        values: selectedTools.map((tool) => {
+          const amount = getCheapestPaidPlan(tool)?.monthlyPrice;
+          return typeof amount === "number" ? formatUsd(amount) : "Custom";
+        }),
+      },
+      {
+        label: "Annual Cost",
+        values: selectedTools.map((tool) => {
+          const amount = getCheapestPaidPlan(tool)?.yearlyPrice;
+          return typeof amount === "number" ? `${formatUsd(amount)}/yr` : "N/A";
+        }),
+      },
       { label: "API Pricing", values: selectedTools.map((tool) => tool.apiPricing) },
       { label: "Request/token limits", values: selectedTools.map((tool) => tool.requestLimits) },
       { label: "Context window", values: selectedTools.map((tool) => tool.contextWindow) },
@@ -120,43 +222,115 @@ export default function CompareAiPlansPage(): ReactElement {
   );
 
   const calculatorSummary = useMemo(() => {
-    const monthly = calculatorRows.reduce((total, row) => {
-      const tool = TOOL_DATA.find((entry) => entry.slug === row.toolSlug);
-      const plan = tool ? getPlanByName(tool, row.planName) : undefined;
-      return total + (typeof plan?.monthlyPrice === "number" ? Number(plan.monthlyPrice) : 0);
-    }, 0);
+    const monthly = calculatorRows.reduce((total, row) => total + getCalculatorRowMonthly(row), 0);
     return { monthly, annual: monthly * 12 };
   }, [calculatorRows]);
 
-  const overlapInsight = useMemo(() => {
-    const overlapping = selectedTools.filter((tool) => tool.type === "chatbot");
-    if (overlapping.length < 2) return null;
-    const overlapCost = overlapping.reduce((sum, tool) => sum + (getCheapestPaidPlan(tool)?.monthlyPrice ?? 0), 0);
-    const cheapest = overlapping.map((tool) => getCheapestPaidPlan(tool)?.monthlyPrice ?? Number.MAX_SAFE_INTEGER).sort((a, b) => a - b)[0];
-    return { message: `You selected ${overlapping.map((tool) => tool.name).join(", ")}. Feature overlap detected across chat + coding + file analysis.`, waste: Math.max(0, overlapCost - cheapest) };
-  }, [selectedTools]);
+  const calculatorTools = useMemo(() => {
+    return calculatorRows
+      .map((row) => TOOL_DATA.find((t) => t.slug === row.toolSlug))
+      .filter((t): t is ToolEntry => Boolean(t));
+  }, [calculatorRows]);
+
+  const calculatorOverlapInsight = useMemo(() => {
+    const lines = calculatorRows.map((row) => {
+      const tool = TOOL_DATA.find((t) => t.slug === row.toolSlug);
+      if (!tool) {
+        return null;
+      }
+      const monthly = getCalculatorRowMonthly(row);
+      return { tool, planName: row.planName, monthly };
+    }).filter((x): x is NonNullable<typeof x> => x !== null);
+
+    const chatLines = lines.filter((l) => l.tool.type === "chatbot");
+    if (chatLines.length < 2) {
+      return null;
+    }
+
+    const priced = chatLines.filter((c) => c.monthly > 0);
+    if (priced.length < 2) {
+      return {
+        waste: 0,
+        headline: "Not enough paid chat rows to bound overlap.",
+        detail: `The calculator lists ${chatLines.map((c) => c.tool.name).join(", ")}. This heuristic needs at least two fixed-price (non-zero) chat subscriptions—free tiers are modeled as $0/mo.`,
+        methodology: "",
+      };
+    }
+
+    const sum = priced.reduce((s, c) => s + c.monthly, 0);
+    const min = Math.min(...priced.map((c) => c.monthly));
+    const waste = Math.max(0, sum - min);
+    const lineDesc = priced.map((c) => `${c.tool.name} · ${c.planName} · ${formatUsd(c.monthly)}/mo`).join(" · ");
+    const methodology = `Upper-bound overlap = sum of modeled chat subscriptions (${formatUsd(sum)}/mo) minus the cheapest kept seat (${formatUsd(min)}/mo) = ${formatUsd(waste)}/mo. This assumes one chat product could cover the workflow if features overlap; it is not usage-weighted. Sources: list prices in this catalog trace to vendor pages in “Official pricing sources”.`;
+
+    return {
+      waste,
+      headline: `Modeled overlap across ${priced.length} paid chat subscriptions`,
+      detail: lineDesc,
+      methodology,
+    };
+  }, [calculatorRows]);
 
   const smartRecommendation = useMemo(() => {
-    const selectedNames = new Set(selectedTools.map((tool) => tool.name));
-    if (selectedNames.has("Claude") && selectedNames.has("ChatGPT") && usageMode === "coding") return "You use Claude + ChatGPT and selected coding as your primary workflow. Consider Cursor + one chatbot to reduce overlap.";
-    if (selectedTools.some((tool) => tool.apiBased) && selectedTools.some((tool) => !tool.apiBased)) return "You are paying for API + subscription products together. Pay-as-you-go may be cheaper for low volume workloads.";
-    if (calculatorSummary.monthly > 60) return "Current tool mix is on the premium side. Keep the highest-usage tool and cancel low-usage overlaps.";
-    return "Your selected stack looks balanced. Use the comparison table to optimize by capability.";
-  }, [selectedTools, usageMode, calculatorSummary.monthly]);
+    if (calculatorRows.length === 0) {
+      return "Add rows to the subscription calculator—this panel only reflects tools you list there (not the comparison checkboxes).";
+    }
 
-  const modalTool = modalToolSlug ? TOOL_DATA.find((tool) => tool.slug === modalToolSlug) ?? null : null;
+    const names = new Set(calculatorTools.map((t) => t.name));
+    const slugs = new Set(calculatorRows.map((r) => r.toolSlug));
+    const chatbots = calculatorTools.filter((t) => t.type === "chatbot");
+    const coding = calculatorTools.filter((t) => t.type === "coding-assistant");
+
+    if (usageMode === "coding" && names.has("Claude") && names.has("ChatGPT")) {
+      return "Calculator rows include Claude and ChatGPT with primary usage set to coding. Data-driven read: two general chat vendors often overlap with IDE-native assistants already in your rows—validate whether both chats are needed for production work.";
+    }
+
+    if (coding.length >= 2 && usageMode === "coding") {
+      return `Calculator shows multiple coding assistants (${coding.map((c) => c.name).join(", ")}). For finance, document which repo or IDE each seat must use—redundant IDE AI is a common fixed-cost leak.`;
+    }
+
+    if (calculatorTools.some((t) => t.apiBased) && calculatorTools.some((t) => !t.apiBased)) {
+      return "Mix of API-metered and seat-priced tools in the calculator. Low API volume can be cheaper than another seat—have engineering export last month’s token spend before adding subscriptions.";
+    }
+
+    if (chatbots.length >= 2) {
+      return `Multiple chat products in the calculator (${chatbots.map((c) => c.name).join(", ")}). If one satisfies retrieval + writing, the others may be partially redundant—tie the decision to feature-level requirements, not brand.`;
+    }
+
+    if (calculatorSummary.monthly > 120) {
+      return `Modeled calculator spend is ${formatUsd(calculatorSummary.monthly)}/mo. Above ~$120/mo, portfolio discounts (e.g., Credex credits) and annual commits usually deserve a line in the business case.`;
+    }
+
+    if (slugs.size < calculatorRows.length) {
+      return "Duplicate tools appear in the calculator—merge plans or remove redundant rows so recommendations map 1:1 to vendors.";
+    }
+
+    return "Stack looks diversified relative to the calculator rows you entered. Tune filters above, then align recommendations with the overlap math in Savings insights.";
+  }, [calculatorRows, calculatorTools, usageMode, calculatorSummary.monthly]);
+
+  const modalTool = modalToolSlug ? (TOOL_DATA.find((tool) => tool.slug === modalToolSlug) ?? null) : null;
 
   const toggleCompareTool = (toolSlug: string): void => {
     setSelectedToolSlugs((current) => (current.includes(toolSlug) ? current.filter((slug) => slug !== toolSlug) : [...current, toolSlug]));
   };
 
-  const addCalculatorRow = (): void => setCalculatorRows((current) => [...current, { id: crypto.randomUUID(), toolSlug: "chatgpt", planName: "Plus" }]);
+  const addCalculatorRow = (): void =>
+    setCalculatorRows((current) => [...current, { id: crypto.randomUUID(), toolSlug: "chatgpt", planName: "Plus" }]);
+
   const updateCalculatorTool = (id: string, toolSlug: string): void => {
     const tool = TOOL_DATA.find((entry) => entry.slug === toolSlug);
-    setCalculatorRows((current) => current.map((row) => (row.id === id ? { ...row, toolSlug, planName: tool?.plans[0]?.name ?? "" } : row)));
+    setCalculatorRows((current) =>
+      current.map((row) => (row.id === id ? { ...row, toolSlug, planName: tool?.plans[0]?.name ?? "" } : row)),
+    );
   };
-  const updateCalculatorPlan = (id: string, planName: string): void => setCalculatorRows((current) => current.map((row) => (row.id === id ? { ...row, planName } : row)));
-  const removeCalculatorRow = (id: string): void => setCalculatorRows((current) => current.filter((row) => row.id !== id));
+
+  const updateCalculatorPlan = (id: string, planName: string): void => {
+    setCalculatorRows((current) => current.map((row) => (row.id === id ? { ...row, planName } : row)));
+  };
+
+  const removeCalculatorRow = (id: string): void => {
+    setCalculatorRows((current) => current.filter((row) => row.id !== id));
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground antialiased">
@@ -169,28 +343,35 @@ export default function CompareAiPlansPage(): ReactElement {
           <p className="mx-auto mt-5 max-w-xl text-pretty text-[17px] leading-relaxed text-muted-foreground">
             Search tools, filter by how you work, and see overlap before you commit to another subscription.
           </p>
+          <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground">
+            The <strong className="text-foreground">subscription calculator</strong> below syncs with the home-page audit stack (same browser) so you are not maintaining two inventories.
+          </p>
         </div>
 
         <section className="mx-auto mt-14 max-w-5xl surface-card p-8 sm:p-10">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0 flex-1">
               <label htmlFor="tool-search" className="eyebrow">
-                Search
+                Search catalog
               </label>
               <input
                 id="tool-search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search AI tools"
+                placeholder="Name, slug, category, or “best for”"
                 className="input-product mt-3"
               />
+              <p className="mt-2 text-sm text-muted-foreground">
+                Showing <span className="font-medium text-foreground">{filteredTools.length}</span> of {TOOL_DATA.length} tools
+                {search.trim() ? ` matching “${search.trim()}”` : ""}.
+              </p>
             </div>
             <button
               type="button"
               onClick={() => document.getElementById("comparison-table")?.scrollIntoView({ behavior: "smooth" })}
               className="btn-primary shrink-0"
             >
-              Compare plans
+              Jump to comparison table
             </button>
           </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -241,46 +422,52 @@ export default function CompareAiPlansPage(): ReactElement {
         </section>
 
         <section className="mx-auto mt-10 grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {filteredTools.map((tool) => (
-            <article key={tool.slug} className="surface-card flex flex-col p-6">
-              <div className="flex items-start gap-3">
-                <ToolLogo slug={tool.slug} name={tool.name} />
-                <div className="min-w-0">
-                  <h3 className="text-[17px] font-semibold tracking-tight text-foreground">{tool.name}</h3>
-                  <p className="mt-1 text-xs font-medium text-muted-foreground">{tool.category}</p>
+          {filteredTools.length === 0 ? (
+            <p className="col-span-full rounded-2xl border border-border bg-card/40 px-5 py-8 text-center text-sm text-muted-foreground">
+              No tools match this search + filters. Clear search or set filters to “All”.
+            </p>
+          ) : (
+            filteredTools.map((tool) => (
+              <article key={tool.slug} className="surface-card flex flex-col p-6">
+                <div className="flex items-start gap-3">
+                  <ToolLogo slug={tool.slug} name={tool.name} />
+                  <div className="min-w-0">
+                    <h3 className="text-[17px] font-semibold tracking-tight text-foreground">{tool.name}</h3>
+                    <p className="mt-1 text-xs font-medium text-muted-foreground">{tool.category}</p>
+                  </div>
                 </div>
-              </div>
-              <p className="mt-4 text-sm text-muted-foreground">
-                From{" "}
-                {getCheapestPaidPlan(tool)?.monthlyPrice
-                  ? `${formatUsd(Number(getCheapestPaidPlan(tool)?.monthlyPrice))}/month`
-                  : "custom pricing"}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Free tier: {tool.plans.some((plan) => plan.monthlyPrice === 0) ? "Yes" : "No"}
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => toggleCompareTool(tool.slug)}
-                  className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
-                    selectedToolSlugs.includes(tool.slug)
-                      ? "bg-primary text-primary-foreground"
-                      : "border border-border bg-background text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {selectedToolSlugs.includes(tool.slug) ? "In comparison" : "Add to compare"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setModalToolSlug(tool.slug)}
-                  className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted"
-                >
-                  View plans
-                </button>
-              </div>
-            </article>
-          ))}
+                <p className="mt-4 text-sm text-muted-foreground">
+                  From{" "}
+                  {getCheapestPaidPlan(tool)?.monthlyPrice
+                    ? `${formatUsd(Number(getCheapestPaidPlan(tool)?.monthlyPrice))}/month`
+                    : "custom pricing"}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Free tier: {tool.plans.some((plan) => plan.monthlyPrice === 0) ? "Yes" : "No"}
+                </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleCompareTool(tool.slug)}
+                    className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                      selectedToolSlugs.includes(tool.slug)
+                        ? "bg-primary text-primary-foreground"
+                        : "border border-border bg-background text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {selectedToolSlugs.includes(tool.slug) ? "In comparison" : "Add to compare"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalToolSlug(tool.slug)}
+                    className="rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+                  >
+                    View plans
+                  </button>
+                </div>
+              </article>
+            ))
+          )}
         </section>
 
         <section id="comparison-table" className="mx-auto mt-16 max-w-5xl scroll-mt-28 surface-card overflow-hidden p-0">
@@ -299,10 +486,7 @@ export default function CompareAiPlansPage(): ReactElement {
                   <tr>
                     <th className="whitespace-nowrap px-6 py-4 text-[13px] font-semibold text-foreground">Feature</th>
                     {selectedTools.map((tool) => (
-                      <th
-                        key={tool.slug}
-                        className="whitespace-nowrap px-6 py-4 text-[13px] font-semibold text-foreground"
-                      >
+                      <th key={tool.slug} className="whitespace-nowrap px-6 py-4 text-[13px] font-semibold text-foreground">
                         <span className="inline-flex items-center gap-2">
                           <ToolLogo slug={tool.slug} name={tool.name} compact />
                           <span>{tool.name}</span>
@@ -330,21 +514,31 @@ export default function CompareAiPlansPage(): ReactElement {
 
         <section className="mx-auto mt-12 max-w-5xl surface-card p-8 sm:p-10">
           <h2 className="section-title">Savings insights</h2>
-          {overlapInsight ? (
+          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+            Overlap math uses only the <strong className="text-foreground">subscription calculator</strong> rows (fixed list prices), not the comparison checkboxes.
+          </p>
+          {calculatorOverlapInsight ? (
             <div className="mt-6 space-y-4">
               <p className="rounded-2xl border border-amber-500/35 bg-amber-950/40 px-5 py-4 text-sm leading-relaxed text-amber-100/90">
-                {overlapInsight.message}
+                {calculatorOverlapInsight.headline}
               </p>
-              <p className="rounded-2xl border border-red-500/35 bg-red-950/35 px-5 py-4 text-sm font-medium text-red-200">
-                Estimated overlap waste: {formatUsd(overlapInsight.waste)}/month
+              <p className="rounded-2xl border border-border bg-muted/25 px-5 py-4 text-sm text-muted-foreground">
+                {calculatorOverlapInsight.detail}
               </p>
-              <p className="rounded-2xl border border-emerald-500/35 bg-emerald-950/35 px-5 py-4 text-sm font-semibold text-emerald-100">
-                Recommendation: keep the best-fit product; pause redundant chat subscriptions.
-              </p>
+              {calculatorOverlapInsight.waste > 0 ? (
+                <p className="rounded-2xl border border-red-500/35 bg-red-950/35 px-5 py-4 text-sm font-medium text-red-200">
+                  Upper-bound overlap (modeled): {formatUsd(calculatorOverlapInsight.waste)}/month
+                </p>
+              ) : null}
+              {calculatorOverlapInsight.methodology ? (
+                <p className="rounded-2xl border border-border bg-card px-5 py-4 text-xs leading-relaxed text-muted-foreground">
+                  {calculatorOverlapInsight.methodology}
+                </p>
+              ) : null}
             </div>
           ) : (
             <p className="mt-6 rounded-2xl border border-border bg-muted/30 px-5 py-4 text-sm text-muted-foreground">
-              No strong overlap signal from your current selection. Add another chat assistant to test redundancy.
+              Add at least two <strong className="text-foreground">chat-assistant</strong> rows with non-zero monthly prices in the calculator to produce an overlap bound.
             </p>
           )}
         </section>
@@ -352,7 +546,7 @@ export default function CompareAiPlansPage(): ReactElement {
         <section className="mx-auto mt-12 max-w-5xl surface-card p-8 sm:p-10">
           <h2 className="section-title">Subscription calculator</h2>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Line items use catalog prices. Usage-based rows show as custom until you add usage estimates.
+            Line items use catalog prices. This list syncs to the home-page audit (tool, plan, seats preserved when possible).
           </p>
           <div className="mt-8 space-y-4">
             {calculatorRows.map((row) => {
@@ -384,8 +578,11 @@ export default function CompareAiPlansPage(): ReactElement {
                   </select>
                   <input
                     readOnly
+                    tabIndex={-1}
+                    aria-readonly="true"
+                    title="Derived from catalog"
                     value={typeof plan?.monthlyPrice === "number" ? `${formatUsd(Number(plan.monthlyPrice))}/month` : "Custom / usage"}
-                    className="input-product bg-muted/40 text-muted-foreground sm:col-span-3"
+                    className="input-product cursor-default select-none bg-muted/50 text-muted-foreground sm:col-span-3"
                   />
                   <button
                     type="button"
@@ -414,7 +611,7 @@ export default function CompareAiPlansPage(): ReactElement {
           </div>
           <p className="mt-6 rounded-2xl border border-emerald-500/35 bg-emerald-950/30 px-5 py-4 text-sm leading-relaxed text-emerald-100/90">
             A lean stack (one chat product + one coding assistant) often cuts redundant spend by up to{" "}
-            {formatUsd(Math.round(calculatorSummary.monthly * 0.3))}/month — validate against your real usage.
+            {formatUsd(Math.round(calculatorSummary.monthly * 0.3))}/month — validate against your real usage and vendor invoices.
           </p>
         </section>
 
@@ -437,6 +634,28 @@ export default function CompareAiPlansPage(): ReactElement {
           </div>
           <p className="mt-6 rounded-2xl border border-border bg-card px-5 py-4 text-sm leading-relaxed text-muted-foreground">
             {smartRecommendation}
+          </p>
+        </section>
+
+        <section id="pricing-sources" className="mx-auto mt-12 max-w-5xl scroll-mt-24 surface-card p-8 sm:p-10">
+          <h2 className="section-title">Official pricing sources</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+            Every fixed monthly figure in this demo traces to a vendor pricing page below. Snapshots can drift—open the link before you present numbers to finance.
+          </p>
+          <ul className="mt-6 columns-1 gap-x-10 text-sm sm:columns-2">
+            {OFFICIAL_PRICING_SOURCES.map((s) => (
+              <li key={s.url} className="mb-3 break-inside-avoid">
+                <a href={s.url} target="_blank" rel="noreferrer" className="font-medium text-foreground underline underline-offset-4">
+                  {s.tool}
+                </a>
+                <span className="block truncate text-xs text-muted-foreground">{s.url}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-6 text-sm text-muted-foreground">
+            <Link href="/" className="font-medium text-foreground underline underline-offset-4">
+              Return to spend audit
+            </Link>
           </p>
         </section>
       </main>

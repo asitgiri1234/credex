@@ -58,6 +58,17 @@ const TOOL_LABELS: Record<ToolName, string> = {
   openAiApi: "OpenAI API",
   gemini: "Gemini",
   windsurf: "Windsurf",
+  perplexity: "Perplexity",
+  notionAi: "Notion AI",
+  midjourney: "Midjourney",
+  runway: "Runway",
+  elevenLabs: "ElevenLabs",
+  jasper: "Jasper",
+  replit: "Replit",
+  v0: "v0",
+  bolt: "Bolt.new",
+  lovable: "Lovable",
+  tabnine: "Tabnine",
 };
 
 const CROSS_TOOL_BASELINE: Record<UseCase, { plan: string; monthly: number; reason: string }> = {

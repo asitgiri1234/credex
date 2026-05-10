@@ -8,7 +8,18 @@ export type ToolSlug =
   | "github-copilot"
   | "claude"
   | "chatgpt"
-  | "gemini";
+  | "gemini"
+  | "perplexity"
+  | "notion-ai"
+  | "midjourney"
+  | "runway"
+  | "elevenlabs"
+  | "jasper"
+  | "replit"
+  | "v0"
+  | "bolt-new"
+  | "lovable"
+  | "tabnine";
 
 export interface SubscriptionPlan {
   name: string;
@@ -133,6 +144,134 @@ export const SUBSCRIPTION_PLANS: ToolPlanCatalog[] = [
       { name: "Pro", monthlyPrice: 20, yearlyPrice: 192, usageLimits: "Expanded premium usage", keyFeatures: ["Premium model quality"], bestFor: "Professionals", category: "individual" },
       { name: "Ultra", monthlyPrice: 25, yearlyPrice: 252, usageLimits: "Highest consumer quota", keyFeatures: ["Top tier model access"], bestFor: "Heavy users", category: "developer" },
       { name: "Enterprise", monthlyPrice: null, yearlyPrice: null, usageLimits: "Custom", keyFeatures: ["Org controls"], bestFor: "Enterprise teams", category: "enterprise" },
+    ],
+  },
+  {
+    slug: "perplexity",
+    name: "Perplexity",
+    icon: "🔎",
+    description: "Answer engine with web-grounded research workflows.",
+    isApiTool: false,
+    plans: [
+      { name: "Free", monthlyPrice: 0, yearlyPrice: 0, usageLimits: "Limited queries", keyFeatures: ["Basic search"], bestFor: "Casual research", category: "free" },
+      { name: "Pro", monthlyPrice: 20, yearlyPrice: 200, usageLimits: "Higher query caps", keyFeatures: ["Premium models"], bestFor: "Analysts", category: "individual" },
+      { name: "Enterprise", monthlyPrice: null, yearlyPrice: null, usageLimits: "Contract", keyFeatures: ["Admin + SSO"], bestFor: "Teams", category: "enterprise" },
+    ],
+  },
+  {
+    slug: "notion-ai",
+    name: "Notion AI",
+    icon: "📓",
+    description: "AI writing and workspace automation inside Notion.",
+    isApiTool: false,
+    plans: [
+      { name: "Free", monthlyPrice: 0, yearlyPrice: 0, usageLimits: "Limited AI", keyFeatures: ["Starter workspace"], bestFor: "Individuals", category: "free" },
+      { name: "Plus", monthlyPrice: 12, yearlyPrice: 120, usageLimits: "Personal Plus modeled with AI", keyFeatures: ["Notes + AI assist"], bestFor: "Solo operators", category: "individual" },
+      { name: "Business", monthlyPrice: 20, yearlyPrice: 216, usageLimits: "Per-seat team workspace", keyFeatures: ["Collaboration"], bestFor: "Teams", category: "team" },
+    ],
+  },
+  {
+    slug: "midjourney",
+    name: "Midjourney",
+    icon: "🎨",
+    description: "High-quality image generation subscription.",
+    isApiTool: false,
+    plans: [
+      { name: "Basic", monthlyPrice: 10, yearlyPrice: 120, usageLimits: "Entry GPU time", keyFeatures: ["Image gens"], bestFor: "Hobbyists", category: "individual" },
+      { name: "Standard", monthlyPrice: 30, yearlyPrice: 360, usageLimits: "More GPU time", keyFeatures: ["Faster queue"], bestFor: "Creators", category: "developer" },
+      { name: "Pro", monthlyPrice: 60, yearlyPrice: 720, usageLimits: "Highest tier consumer", keyFeatures: ["Stealth + perks"], bestFor: "Studios", category: "developer" },
+    ],
+  },
+  {
+    slug: "runway",
+    name: "Runway",
+    icon: "🎬",
+    description: "Video and generative media tooling.",
+    isApiTool: false,
+    plans: [
+      { name: "Basic", monthlyPrice: 15, yearlyPrice: 180, usageLimits: "Credits bucket", keyFeatures: ["Gen-4 trials"], bestFor: "Experimenters", category: "individual" },
+      { name: "Standard", monthlyPrice: 35, yearlyPrice: 420, usageLimits: "Higher credits", keyFeatures: ["Longer exports"], bestFor: "Creators", category: "developer" },
+      { name: "Pro", monthlyPrice: 95, yearlyPrice: 1140, usageLimits: "Pro credits", keyFeatures: ["Team-friendly exports"], bestFor: "Studios", category: "team" },
+    ],
+  },
+  {
+    slug: "elevenlabs",
+    name: "ElevenLabs",
+    icon: "🎙️",
+    description: "Voice synthesis and audio AI APIs.",
+    isApiTool: false,
+    plans: [
+      { name: "Free", monthlyPrice: 0, yearlyPrice: 0, usageLimits: "Low monthly characters", keyFeatures: ["Starter voices"], bestFor: "Tests", category: "free" },
+      { name: "Starter", monthlyPrice: 5, yearlyPrice: 60, usageLimits: "Character quota", keyFeatures: ["Commercial on paid"], bestFor: "Indie", category: "individual" },
+      { name: "Creator", monthlyPrice: 22, yearlyPrice: 264, usageLimits: "Higher quota", keyFeatures: ["Voice cloning"], bestFor: "Creators", category: "developer" },
+    ],
+  },
+  {
+    slug: "jasper",
+    name: "Jasper",
+    icon: "✍️",
+    description: "Marketing and long-form writing copilot.",
+    isApiTool: false,
+    plans: [
+      { name: "Creator", monthlyPrice: 49, yearlyPrice: 468, usageLimits: "Single seat", keyFeatures: ["Campaign workflows"], bestFor: "Marketers", category: "individual" },
+      { name: "Teams", monthlyPrice: 125, yearlyPrice: 1188, usageLimits: "Multi-seat", keyFeatures: ["Brand voice"], bestFor: "Growth teams", category: "team" },
+    ],
+  },
+  {
+    slug: "replit",
+    name: "Replit",
+    icon: "💻",
+    description: "Cloud IDE with AI agent features.",
+    isApiTool: false,
+    plans: [
+      { name: "Free", monthlyPrice: 0, yearlyPrice: 0, usageLimits: "Limited compute", keyFeatures: ["Public repls"], bestFor: "Learners", category: "free" },
+      { name: "Core", monthlyPrice: 20, yearlyPrice: 220, usageLimits: "Personal dev seat", keyFeatures: ["AI agent access"], bestFor: "Builders", category: "developer" },
+      { name: "Teams", monthlyPrice: 40, yearlyPrice: 480, usageLimits: "Per-seat org", keyFeatures: ["Shared projects"], bestFor: "Startups", category: "team" },
+    ],
+  },
+  {
+    slug: "v0",
+    name: "v0",
+    icon: "▲",
+    description: "Vercel UI generation from prompts.",
+    isApiTool: false,
+    plans: [
+      { name: "Free", monthlyPrice: 0, yearlyPrice: 0, usageLimits: "Limited generations", keyFeatures: ["Community"], bestFor: "Experiments", category: "free" },
+      { name: "Premium", monthlyPrice: 20, yearlyPrice: 200, usageLimits: "Higher limits", keyFeatures: ["Private projects"], bestFor: "Product teams", category: "developer" },
+    ],
+  },
+  {
+    slug: "bolt-new",
+    name: "Bolt.new",
+    icon: "⚡",
+    description: "Full-stack app previews from prompts (StackBlitz).",
+    isApiTool: false,
+    plans: [
+      { name: "Free", monthlyPrice: 0, yearlyPrice: 0, usageLimits: "Limited runs", keyFeatures: ["Public previews"], bestFor: "Try-outs", category: "free" },
+      { name: "Pro", monthlyPrice: 25, yearlyPrice: 250, usageLimits: "Paid seat modeled", keyFeatures: ["More compute"], bestFor: "Builders", category: "developer" },
+    ],
+  },
+  {
+    slug: "lovable",
+    name: "Lovable",
+    icon: "💜",
+    description: "Prompt-to-app builder with hosting.",
+    isApiTool: false,
+    plans: [
+      { name: "Free", monthlyPrice: 0, yearlyPrice: 0, usageLimits: "Limited projects", keyFeatures: ["Starter templates"], bestFor: "Hackathons", category: "free" },
+      { name: "Pro", monthlyPrice: 25, yearlyPrice: 250, usageLimits: "Higher quotas", keyFeatures: ["Custom domains"], bestFor: "Indie hackers", category: "developer" },
+    ],
+  },
+  {
+    slug: "tabnine",
+    name: "Tabnine",
+    icon: "🧩",
+    description: "Code completion tuned for privacy and enterprise.",
+    isApiTool: false,
+    plans: [
+      { name: "Free", monthlyPrice: 0, yearlyPrice: 0, usageLimits: "Short completions", keyFeatures: ["Basic models"], bestFor: "Students", category: "free" },
+      { name: "Pro", monthlyPrice: 12, yearlyPrice: 120, usageLimits: "Full completions", keyFeatures: ["Longer context"], bestFor: "Developers", category: "developer" },
+      { name: "Enterprise", monthlyPrice: null, yearlyPrice: null, usageLimits: "Custom", keyFeatures: ["SSO + audit"], bestFor: "Enterprises", category: "enterprise" },
     ],
   },
 ];
