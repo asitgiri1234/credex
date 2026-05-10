@@ -5,6 +5,10 @@ import type { ReactElement } from "react";
 const LOCAL_LOGO_BY_SLUG: Record<string, string> = {
   "openai-api": "/ai-tool-logos/openai-api.svg",
   chatgpt: "/ai-tool-logos/chatgpt.svg",
+  midjourney: "/ai-tool-logos/midjourney.svg",
+  runway: "/ai-tool-logos/runway.svg",
+  tabnine: "/ai-tool-logos/tabnine.svg",
+  jasper: "/ai-tool-logos/jasper.png",
 };
 
 /** Simple Icons slug → CDN SVG for remaining tools. */
@@ -25,7 +29,6 @@ const SIMPLE_ICON_BY_TOOL_SLUG: Record<string, string> = {
   v0: "vercel",
   "bolt-new": "stackblitz",
   lovable: "github", // no stable Simple Icon yet — neutral mark
-  tabnine: "tabnine",
 };
 
 export interface ToolLogoProps {
