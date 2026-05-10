@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import { ToolLogo } from "@/components/compare-ai-plans/tool-logo";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { OFFICIAL_PRICING_SOURCES } from "@/lib/pricing-sources";
 import { getWinningColumnIndices } from "@/lib/comparison-winners";
 import { useMoneyFormatter } from "@/lib/hooks/use-money-formatter";
@@ -356,7 +357,8 @@ export default function CompareAiPlansPage(): ReactElement {
 
   return (
     <div className="min-h-screen bg-background text-foreground antialiased">
-      <main className="mx-auto max-w-7xl px-5 pb-24 pt-14 sm:px-8 sm:pt-16">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-7xl px-5 pb-24 pt-14 sm:px-8 sm:pt-16">
+        <Breadcrumbs items={[{ href: "/", label: "Credex" }, { label: "Plan catalog" }]} />
         <div className="mx-auto max-w-3xl text-center">
           <p className="eyebrow">Subscription optimizer</p>
           <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl sm:leading-[1.08]">
@@ -513,11 +515,20 @@ export default function CompareAiPlansPage(): ReactElement {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
+                <caption className="sr-only">
+                  Side-by-side comparison of selected AI tools: pricing, limits, capabilities, and positioning.
+                </caption>
                 <thead className="sticky top-14 z-10 border-b border-border bg-card/95 backdrop-blur-sm">
                   <tr>
-                    <th className="whitespace-nowrap px-6 py-4 text-[13px] font-semibold text-foreground">Feature</th>
+                    <th scope="col" className="whitespace-nowrap px-6 py-4 text-[13px] font-semibold text-foreground">
+                      Feature
+                    </th>
                     {selectedTools.map((tool) => (
-                      <th key={tool.slug} className="whitespace-nowrap px-6 py-4 text-[13px] font-semibold text-foreground">
+                      <th
+                        key={tool.slug}
+                        scope="col"
+                        className="whitespace-nowrap px-6 py-4 text-[13px] font-semibold text-foreground"
+                      >
                         <span className="inline-flex items-center gap-2">
                           <ToolLogo slug={tool.slug} name={tool.name} compact />
                           <span>{tool.name}</span>
@@ -535,7 +546,9 @@ export default function CompareAiPlansPage(): ReactElement {
                       row.label === "Cheapest Paid Plan";
                     return (
                       <tr key={row.label} className="border-t border-border">
-                        <td className="px-6 py-3.5 font-medium text-foreground">{row.label}</td>
+                        <th scope="row" className="px-6 py-3.5 text-left font-medium text-foreground">
+                          {row.label}
+                        </th>
                         {row.values.map((value, index) => {
                           const isWinner = winners?.has(index) ?? false;
                           return (

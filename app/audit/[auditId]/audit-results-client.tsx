@@ -5,6 +5,7 @@ import { Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import type { AuditInput, AuditResult, ToolAuditResult } from "@/lib/audit-engine";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { useMoneyFormatter } from "@/lib/hooks/use-money-formatter";
 
 const STORAGE_KEY_PREFIX = "credex-audit-session:";
@@ -54,6 +55,7 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
   const [leadName, setLeadName] = useState("");
   const [leadStatus, setLeadStatus] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
+  const [resultsAnnouncement, setResultsAnnouncement] = useState("");
 
   useEffect(() => {
     setData(loadSession(auditId));
@@ -110,9 +112,20 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
     }
   }, [data]);
 
+  useEffect(() => {
+    if (!data) {
+      setResultsAnnouncement("");
+      return;
+    }
+    setResultsAnnouncement(
+      `Audit results loaded. Modeled monthly savings ${usd(data.result.totalMonthlySavings)}. Review the breakdown and share options below.`,
+    );
+  }, [data, usd]);
+
   if (!data) {
     return (
-      <main className="mx-auto max-w-2xl px-5 py-20">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-5 py-20">
+        <Breadcrumbs items={[{ href: "/", label: "Credex" }, { label: "Audit results" }]} />
         <p className="eyebrow">Audit results</p>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">No session data for this audit</h1>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
@@ -128,7 +141,11 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
   const modeledSpend = data.input.tools.reduce((s, t) => s + t.monthlySpend, 0);
 
   return (
-    <main className="mx-auto max-w-5xl px-5 pb-24 pt-14 sm:px-8 sm:pt-18">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-5 pb-24 pt-14 sm:px-8 sm:pt-18">
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {resultsAnnouncement}
+      </div>
+      <Breadcrumbs items={[{ href: "/", label: "Credex" }, { label: "Audit results" }]} />
       <div className="rounded-2xl border border-emerald-500/35 bg-gradient-to-br from-emerald-950/50 to-card px-6 py-6 sm:px-8 sm:py-7">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
           <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-300">
@@ -177,77 +194,94 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
         </div>
       ) : null}
 
-      <div className="mt-10 grid gap-4 sm:grid-cols-3">
-        <div className="surface-card px-5 py-6">
-          <p className="eyebrow">Monthly savings (modeled)</p>
-          <p className="mt-3 text-3xl font-semibold tabular-nums text-foreground">{usd(data.result.totalMonthlySavings)}</p>
+      <div role="region" aria-label="Audit results detail" className="mt-10 space-y-10">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="surface-card px-5 py-6">
+            <p className="eyebrow">Monthly savings (modeled)</p>
+            <p className="mt-3 text-3xl font-semibold tabular-nums text-foreground">{usd(data.result.totalMonthlySavings)}</p>
+          </div>
+          <div className="surface-card px-5 py-6">
+            <p className="eyebrow">Annual savings (modeled)</p>
+            <p className="mt-3 text-3xl font-semibold tabular-nums text-foreground">{usd(data.result.totalAnnualSavings)}</p>
+          </div>
+          <div className="surface-card px-5 py-6 ring-1 ring-border">
+            <p className="eyebrow">Credex portfolio fit</p>
+            <p className="mt-3 text-lg font-semibold text-foreground">{data.result.credexOpportunity ? "High — credits & aggregation" : "Emerging — optimize plans first"}</p>
+          </div>
         </div>
-        <div className="surface-card px-5 py-6">
-          <p className="eyebrow">Annual savings (modeled)</p>
-          <p className="mt-3 text-3xl font-semibold tabular-nums text-foreground">{usd(data.result.totalAnnualSavings)}</p>
-        </div>
-        <div className="surface-card px-5 py-6 ring-1 ring-border">
-          <p className="eyebrow">Credex portfolio fit</p>
-          <p className="mt-3 text-lg font-semibold text-foreground">{data.result.credexOpportunity ? "High — credits & aggregation" : "Emerging — optimize plans first"}</p>
-        </div>
-      </div>
 
-      <section className="mt-12 surface-card p-8 sm:p-10">
-        <h2 className="section-title">Executive summary</h2>
-        <p className="mt-6 text-pretty text-[17px] leading-relaxed text-muted-foreground">{data.narrative}</p>
-      </section>
+        <section className="surface-card p-8 sm:p-10">
+          <h2 className="section-title">Executive summary</h2>
+          <p className="mt-6 text-pretty text-[17px] leading-relaxed text-muted-foreground">{data.narrative}</p>
+        </section>
 
-      <section className="mt-10 surface-card overflow-hidden p-0">
-        <div className="border-b border-border px-8 py-6 sm:px-10">
-          <h2 className="section-title">Savings breakdown</h2>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Numbers come from catalog pricing, seat math, overlap rules, and tier-fit checks in the Credex audit engine.
-          </p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-border bg-muted/30">
-              <tr>
-                <th className="px-6 py-3 font-semibold text-foreground">Tool</th>
-                <th className="px-6 py-3 font-semibold text-foreground">Signal</th>
-                <th className="px-6 py-3 font-semibold text-foreground">Current</th>
-                <th className="px-6 py-3 font-semibold text-foreground">Modeled after</th>
-                <th className="px-6 py-3 font-semibold text-foreground">$/mo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedTools.map((row) => (
-                <tr key={`${row.tool}-${row.currentPlan}`} className="border-t border-border">
-                  <td className="px-6 py-4 font-medium text-foreground">{row.tool}</td>
-                  <td className="px-6 py-4 text-muted-foreground">{recommendationLabel(row.recommendation)}</td>
-                  <td className="px-6 py-4 tabular-nums text-muted-foreground">{usd(row.currentSpend)}</td>
-                  <td className="px-6 py-4 tabular-nums text-muted-foreground">{usd(row.estimatedNewSpend)}</td>
-                  <td className="px-6 py-4 tabular-nums font-medium text-emerald-700 dark:text-emerald-300">{usd(row.monthlySavings)}</td>
+        <section className="surface-card overflow-hidden p-0" aria-labelledby="savings-breakdown-heading">
+          <div className="border-b border-border px-8 py-6 sm:px-10">
+            <h2 id="savings-breakdown-heading" className="section-title">
+              Savings breakdown
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              Numbers come from catalog pricing, seat math, overlap rules, and tier-fit checks in the Credex audit engine.
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <caption className="sr-only">Per-tool modeled spend, recommendations, and monthly savings from this audit.</caption>
+              <thead className="border-b border-border bg-muted/30">
+                <tr>
+                  <th scope="col" className="px-6 py-3 font-semibold text-foreground">
+                    Tool
+                  </th>
+                  <th scope="col" className="px-6 py-3 font-semibold text-foreground">
+                    Signal
+                  </th>
+                  <th scope="col" className="px-6 py-3 font-semibold text-foreground">
+                    Current
+                  </th>
+                  <th scope="col" className="px-6 py-3 font-semibold text-foreground">
+                    Modeled after
+                  </th>
+                  <th scope="col" className="px-6 py-3 font-semibold text-foreground">
+                    $/mo
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              </thead>
+              <tbody>
+                {sortedTools.map((row) => (
+                  <tr key={`${row.tool}-${row.currentPlan}`} className="border-t border-border">
+                    <th scope="row" className="px-6 py-4 text-left font-medium text-foreground">
+                      {row.tool}
+                    </th>
+                    <td className="px-6 py-4 text-muted-foreground">{recommendationLabel(row.recommendation)}</td>
+                    <td className="px-6 py-4 tabular-nums text-muted-foreground">{usd(row.currentSpend)}</td>
+                    <td className="px-6 py-4 tabular-nums text-muted-foreground">{usd(row.estimatedNewSpend)}</td>
+                    <td className="px-6 py-4 tabular-nums font-medium text-emerald-700 dark:text-emerald-300">{usd(row.monthlySavings)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-      <section className="mt-10 surface-muted p-8 sm:p-10">
-        <h2 className="section-title">Advice by line item</h2>
-        <div className="mt-6 space-y-4">
-          {sortedTools.map((row) => (
-            <div key={`${row.tool}-advice`} className="rounded-2xl border border-border bg-card/40 px-5 py-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="font-semibold text-foreground">{row.tool}</p>
-                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{row.priority} priority</span>
+        <section className="surface-muted p-8 sm:p-10">
+          <h2 className="section-title">Advice by line item</h2>
+          <div className="mt-6 space-y-4">
+            {sortedTools.map((row) => (
+              <div key={`${row.tool}-advice`} className="rounded-2xl border border-border bg-card/40 px-5 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-semibold text-foreground">{row.tool}</p>
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{row.priority} priority</span>
+                </div>
+                <p className="mt-2 text-sm font-medium text-foreground">{row.recommendedAction}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{row.reasoning}</p>
+                {row.recommendedPlan ? (
+                  <p className="mt-2 text-xs text-muted-foreground">Suggested plan: {row.recommendedPlan}</p>
+                ) : null}
               </div>
-              <p className="mt-2 text-sm font-medium text-foreground">{row.recommendedAction}</p>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{row.reasoning}</p>
-              {row.recommendedPlan ? (
-                <p className="mt-2 text-xs text-muted-foreground">Suggested plan: {row.recommendedPlan}</p>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      </div>
 
       <section className="mt-10 surface-card p-8 sm:p-10">
         <h2 className="section-title">Credex integration</h2>

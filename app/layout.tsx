@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Inter, Roboto_Mono } from "next/font/google";
 import { SiteHeader } from "@/components/site-header";
+import { SkipToMain } from "@/components/skip-to-main";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeScript } from "@/components/theme-script";
 import "./globals.css";
@@ -68,6 +69,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col bg-background text-foreground antialiased [font-feature-settings:'ss01']">
         <Script id="credex-theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: ThemeScript() }} />
         <ThemeProvider>
+          <SkipToMain />
           <SiteHeader />
           <div className="flex-1">{children}</div>
         </ThemeProvider>

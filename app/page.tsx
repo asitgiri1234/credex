@@ -5,8 +5,8 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
-import { runAudit } from "@/lib/audit-engine";
-import type { UseCase } from "@/lib/audit-engine";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { runAudit, type AuditResult, type UseCase } from "@/lib/audit-engine";
 import { buildAuditInputFromUi, clampSeats, clampTeamSize } from "@/lib/audit-bridge";
 import { validateSeatsString, validateTeamSizeString } from "@/lib/audit-form-validation";
 import { OFFICIAL_PRICING_SOURCES } from "@/lib/pricing-sources";
@@ -54,6 +54,7 @@ export default function Home(): ReactElement {
   const [teamSize, setTeamSize] = useState("5");
   const [useCase, setUseCase] = useState<UseCase>("coding");
   const [isRunningAudit, setIsRunningAudit] = useState(false);
+  const [auditAnnouncement, setAuditAnnouncement] = useState("");
   const [auditError, setAuditError] = useState<string>("");
   const [addToolMessage, setAddToolMessage] = useState<string>("");
   const [toolRows, setToolRows] = useState<ToolEntry[]>(DEFAULT_TOOL_ROWS);
@@ -287,6 +288,11 @@ export default function Home(): ReactElement {
         warnings: json.warnings,
       };
       sessionStorage.setItem(`credex-audit-session:${json.auditId}`, JSON.stringify(payload));
+      const result = json.result as AuditResult;
+      setAuditAnnouncement(
+        `Audit finished successfully. Modeled monthly savings ${usd(result.totalMonthlySavings)}. Opening full results.`,
+      );
+      await new Promise((r) => setTimeout(r, 320));
       router.push(`/audit/${json.auditId}`);
     } catch {
       setAuditError("Unable to reach the audit service. Try again.");
@@ -296,7 +302,11 @@ export default function Home(): ReactElement {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="mx-auto max-w-6xl px-5 pb-20 pt-14 sm:px-8 sm:pt-20">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-5 pb-20 pt-14 sm:px-8 sm:pt-20">
+        <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+          {auditAnnouncement}
+        </div>
+        <Breadcrumbs items={[{ href: "/", label: "Credex" }, { label: "Spend audit" }]} />
         <div className="mx-auto max-w-3xl text-center">
           <p className="eyebrow">AI spend audit</p>
           <h1 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl sm:leading-[1.08]">

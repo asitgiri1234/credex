@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactElement } from "react";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getSharePayload } from "@/lib/share-store";
 
 function siteBase(): string {
@@ -45,7 +46,8 @@ export default function SharedAuditPage({ params }: Props): ReactElement {
 
   if (!data) {
     return (
-      <main className="mx-auto max-w-2xl px-5 py-20">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-5 py-20">
+        <Breadcrumbs items={[{ href: "/", label: "Credex" }, { label: "Shared audit" }]} />
         <p className="eyebrow">Shared audit</p>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">This link is not available</h1>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
@@ -61,7 +63,8 @@ export default function SharedAuditPage({ params }: Props): ReactElement {
   const top = [...data.result.tools].sort((a, b) => b.monthlySavings - a.monthlySavings).slice(0, 4);
 
   return (
-    <main className="mx-auto max-w-3xl px-5 pb-24 pt-14 sm:px-8 sm:pt-18">
+    <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-5 pb-24 pt-14 sm:px-8 sm:pt-18">
+      <Breadcrumbs items={[{ href: "/", label: "Credex" }, { label: "Shared audit" }]} />
       <p className="eyebrow">Shared Credex audit</p>
       <h1 className="mt-4 text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
         ~${data.result.totalMonthlySavings.toLocaleString()}/mo modeled savings

@@ -15,7 +15,7 @@ export function SiteHeader(): ReactElement {
           Credex
         </Link>
         <div className="flex items-center gap-1 sm:gap-2">
-          <nav className="flex items-center gap-0.5 sm:gap-1">
+          <nav aria-label="Primary" className="flex items-center gap-0.5 sm:gap-1">
             {navItems.map((item) => (
               <Link
                 key={item.href}
