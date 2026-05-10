@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
@@ -11,6 +12,7 @@ import { validateSeatsString, validateTeamSizeString } from "@/lib/audit-form-va
 import { OFFICIAL_PRICING_SOURCES } from "@/lib/pricing-sources";
 import { loadCredexStack, saveCredexStack, toCompareUsageMode } from "@/lib/stack-sync";
 import { suggestNextStackRow } from "@/lib/suggest-stack-row";
+import { useMoneyFormatter } from "@/lib/hooks/use-money-formatter";
 import { SUBSCRIPTION_PLANS, type SubscriptionPlan, type ToolPlanCatalog } from "@/lib/subscription-plans";
 
 interface ToolEntry {
@@ -47,6 +49,7 @@ const getMonthlySpendForRow = (row: ToolEntry): number => {
 
 export default function Home(): ReactElement {
   const router = useRouter();
+  const { usd } = useMoneyFormatter();
   const [storageReady, setStorageReady] = useState(false);
   const [teamSize, setTeamSize] = useState("5");
   const [useCase, setUseCase] = useState<UseCase>("coding");
@@ -92,6 +95,26 @@ export default function Home(): ReactElement {
       })),
     });
   }, [toolRows, teamSize, useCase, storageReady]);
+
+  const rowsSignature = useMemo(() => toolRows.map((r) => `${r.id}:${r.tool}:${r.plan}`).join("|"), [toolRows]);
+
+  useEffect(() => {
+    if (!storageReady) {
+      return;
+    }
+    setToolRows((prev) => {
+      let changed = false;
+      const next = prev.map((row) => {
+        if (getPlanForTool(row.tool, row.plan)) {
+          return row;
+        }
+        changed = true;
+        const cat = findCatalogByTool(row.tool);
+        return { ...row, plan: cat?.plans[0]?.name ?? row.plan };
+      });
+      return changed ? next : prev;
+    });
+  }, [rowsSignature, storageReady]);
 
   const teamSizeError = validateTeamSizeString(teamSize);
 
@@ -160,9 +183,21 @@ export default function Home(): ReactElement {
   };
 
   const updateToolWithPlanReset = (id: string, toolName: string): void => {
-    const catalog = findCatalogByTool(toolName);
-    const defaultPlan = catalog?.plans[0]?.name ?? "";
-    setToolRows((prev) => prev.map((row) => (row.id === id ? { ...row, tool: toolName, plan: defaultPlan } : row)));
+    setToolRows((prev) =>
+      prev.map((row) => {
+        if (row.id !== id) {
+          return row;
+        }
+        const catalog = findCatalogByTool(toolName);
+        const plans = catalog?.plans ?? [];
+        const keepPlan = plans.some((p) => p.name === row.plan);
+        return {
+          ...row,
+          tool: toolName,
+          plan: keepPlan ? row.plan : plans[0]?.name ?? "",
+        };
+      }),
+    );
   };
 
   const addTool = (): void => {
@@ -210,6 +245,8 @@ export default function Home(): ReactElement {
       return;
     }
 
+    await new Promise((r) => setTimeout(r, 150));
+
     const rows = toolRows.map((row) => ({
       tool: row.tool,
       plan: row.plan,
@@ -238,6 +275,7 @@ export default function Home(): ReactElement {
 
       if (!res.ok || !json.auditId || !json.input || !json.result || typeof json.narrative !== "string") {
         setAuditError(json.error ?? "Audit failed. Check your inputs and try again.");
+        setIsRunningAudit(false);
         return;
       }
 
@@ -252,7 +290,6 @@ export default function Home(): ReactElement {
       router.push(`/audit/${json.auditId}`);
     } catch {
       setAuditError("Unable to reach the audit service. Try again.");
-    } finally {
       setIsRunningAudit(false);
     }
   };
@@ -268,23 +305,27 @@ export default function Home(): ReactElement {
           <p className="mx-auto mt-5 max-w-xl text-pretty text-[17px] leading-relaxed text-muted-foreground">
             Map your subscriptions, see overlap risk, and estimate savings with numbers your finance team can defend.
           </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/compare-ai-plans" className="btn-secondary">
-              Compare plans
-            </Link>
-            <a
-              href="#audit-form"
-              className="text-sm font-medium text-foreground underline decoration-border underline-offset-4 transition hover:decoration-foreground"
-            >
-              Start audit
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
+            <a href="#audit-form" className="btn-primary w-full min-h-11 px-8 sm:w-auto">
+              Run spend audit
             </a>
+            <Link
+              href="/compare-ai-plans"
+              className="text-sm font-medium text-muted-foreground underline decoration-border underline-offset-4 transition hover:text-foreground hover:decoration-foreground"
+            >
+              Browse plan catalog →
+            </Link>
           </div>
         </div>
 
+        <p className="mx-auto mt-4 max-w-xl text-center text-xs text-muted-foreground">
+          Amounts modeled in USD; numbers use your locale for grouping. Verify live FX on vendor sites outside the U.S.
+        </p>
+
         <div className="mx-auto mt-16 grid max-w-4xl gap-4 sm:grid-cols-3">
-          <StatCard label="Current monthly spend" value={`$${currentSpend.toLocaleString()}`} />
-          <StatCard label="Estimated monthly savings" value={`$${estimatedMonthlySavings.toLocaleString()}`} emphasis />
-          <StatCard label="Estimated annual savings" value={`$${estimatedAnnualSavings.toLocaleString()}`} />
+          <StatCard label="Current monthly spend" value={usd(currentSpend)} />
+          <StatCard label="Estimated monthly savings" value={usd(estimatedMonthlySavings)} emphasis />
+          <StatCard label="Estimated annual savings" value={usd(estimatedAnnualSavings)} />
         </div>
 
         {toolRows.length === 0 ? (
@@ -339,12 +380,24 @@ export default function Home(): ReactElement {
           ) : null}
 
           <form
-            className="mt-8"
+            className="relative mt-8"
+            aria-busy={isRunningAudit}
             onSubmit={(event) => {
               event.preventDefault();
               void handleRunAudit();
             }}
           >
+            {isRunningAudit ? (
+              <div
+                className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-2xl bg-background/75 px-6 text-center backdrop-blur-sm"
+                role="status"
+                aria-live="polite"
+              >
+                <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
+                <p className="text-sm font-medium text-foreground">Crunching your stack…</p>
+                <p className="max-w-xs text-xs text-muted-foreground">Running audit rules, overlap checks, and savings math.</p>
+              </div>
+            ) : null}
             <div className="grid gap-6 sm:grid-cols-2">
               <Field label="Team size" error={teamSizeError}>
                 <input
@@ -374,12 +427,12 @@ export default function Home(): ReactElement {
             </div>
 
             <div className="mt-8 space-y-4">
-              <div className="hidden grid-cols-12 gap-4 px-1 sm:grid">
-                <p className="eyebrow sm:col-span-3">AI tool</p>
-                <p className="eyebrow sm:col-span-3">Plan</p>
-                <p className="eyebrow sm:col-span-2">Monthly (calc.)</p>
-                <p className="eyebrow sm:col-span-2">Quantity</p>
-                <p className="eyebrow sm:col-span-2 text-right">Remove</p>
+              <div className="hidden grid-cols-12 gap-4 px-1 sm:grid sm:items-end">
+                <p className="eyebrow whitespace-nowrap sm:col-span-3">AI tool</p>
+                <p className="eyebrow whitespace-nowrap sm:col-span-3">Plan</p>
+                <p className="eyebrow whitespace-nowrap sm:col-span-2">Monthly</p>
+                <p className="eyebrow whitespace-nowrap sm:col-span-2">Qty</p>
+                <p className="eyebrow whitespace-nowrap sm:col-span-2 text-right">Remove</p>
               </div>
               {toolRows.map((row) => (
                 <div
@@ -414,12 +467,20 @@ export default function Home(): ReactElement {
                       ))}
                     </select>
                   </Field>
-                  <Field label="Monthly (calc.)" className="sm:col-span-2">
+                  <Field
+                    label={
+                      <span>
+                        <span className="sm:hidden">Monthly</span>
+                        <span className="hidden sm:inline">Monthly (calc.)</span>
+                      </span>
+                    }
+                    className="sm:col-span-2"
+                  >
                     <input
                       value={
                         getPlanForTool(row.tool, row.plan)?.monthlyPrice === null
                           ? "Usage-based (not in fixed total)"
-                          : `$${getMonthlySpendForRow(row).toLocaleString()}`
+                          : usd(getMonthlySpendForRow(row))
                       }
                       readOnly
                       tabIndex={-1}
@@ -460,9 +521,16 @@ export default function Home(): ReactElement {
             <button
               type="submit"
               disabled={isRunningAudit || hasBlockingFormIssue || auditPreview.result === null}
-              className="btn-primary mt-10 w-full sm:w-auto"
+              className="btn-primary mt-10 min-h-11 w-full gap-2 sm:w-auto"
             >
-              {isRunningAudit ? "Running audit…" : "Run spend audit"}
+              {isRunningAudit ? (
+                <>
+                  <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+                  Building results…
+                </>
+              ) : (
+                "Run spend audit"
+              )}
             </button>
             {auditError ? (
               <p className="mt-4 text-sm text-red-300/90" role="alert">
@@ -487,7 +555,7 @@ export default function Home(): ReactElement {
             </ul>
             <p className="mt-3 text-xs text-muted-foreground">
               <Link href="/compare-ai-plans#pricing-sources" className="underline underline-offset-4">
-                Full source list on Compare plans
+                Full vendor source list in plan catalog
               </Link>
             </p>
           </div>
@@ -522,7 +590,7 @@ function Field({
   className,
   error,
 }: {
-  label: string;
+  label: ReactNode;
   children: ReactNode;
   className?: string;
   error?: string | null;

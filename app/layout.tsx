@@ -1,6 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Inter, Roboto_Mono } from "next/font/google";
 import { SiteHeader } from "@/components/site-header";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeScript } from "@/components/theme-script";
 import "./globals.css";
 
 const interSans = Inter({
@@ -23,6 +26,15 @@ export const metadata: Metadata = {
     template: "%s · Credex",
   },
   description: "AI spend audit and subscription optimization for startups",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/icon.svg", type: "image/svg+xml" }],
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Credex",
+    statusBarStyle: "default",
+  },
   openGraph: {
     title: "Credex — AI spend audit",
     description: "Map AI subscriptions, surface overlap, and model defensible savings with Credex.",
@@ -39,19 +51,26 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#171717" },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`dark ${interSans.variable} ${robotoMono.variable} h-full antialiased`}
-    >
+    <html lang="en" suppressHydrationWarning className={`${interSans.variable} ${robotoMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-background text-foreground antialiased [font-feature-settings:'ss01']">
-        <SiteHeader />
-        <div className="flex-1">{children}</div>
+        <Script id="credex-theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: ThemeScript() }} />
+        <ThemeProvider>
+          <SiteHeader />
+          <div className="flex-1">{children}</div>
+        </ThemeProvider>
       </body>
     </html>
   );

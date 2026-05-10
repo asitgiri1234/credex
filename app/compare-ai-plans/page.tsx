@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import { ToolLogo } from "@/components/compare-ai-plans/tool-logo";
 import { OFFICIAL_PRICING_SOURCES } from "@/lib/pricing-sources";
+import { getWinningColumnIndices } from "@/lib/comparison-winners";
+import { useMoneyFormatter } from "@/lib/hooks/use-money-formatter";
 import {
   compareModeToUseCase,
   loadCredexStack,
@@ -59,8 +61,6 @@ const getPlanByName = (tool: ToolEntry, planName: string): PlanEntry | undefined
   return tool.plans.find((plan) => plan.name === planName);
 };
 
-const formatUsd = (amount: number): string => `$${amount.toLocaleString()}`;
-
 function getCalculatorRowMonthly(row: SubscriptionInput): number {
   const tool = TOOL_DATA.find((entry) => entry.slug === row.toolSlug);
   if (!tool) {
@@ -71,6 +71,7 @@ function getCalculatorRowMonthly(row: SubscriptionInput): number {
 }
 
 export default function CompareAiPlansPage(): ReactElement {
+  const { usd } = useMoneyFormatter();
   const [storageReady, setStorageReady] = useState(false);
   const [search, setSearch] = useState("");
   const [pricingFilter, setPricingFilter] = useState<PricingFilter>("all");
@@ -189,21 +190,21 @@ export default function CompareAiPlansPage(): ReactElement {
         label: "Cheapest Paid Plan",
         values: selectedTools.map((tool) => {
           const plan = getCheapestPaidPlan(tool);
-          return plan ? `${plan.name} (${formatUsd(Number(plan.monthlyPrice))}/mo)` : "Custom only";
+          return plan ? `${plan.name} (${usd(Number(plan.monthlyPrice))}/mo)` : "Custom only";
         }),
       },
       {
         label: "Monthly Cost",
         values: selectedTools.map((tool) => {
           const amount = getCheapestPaidPlan(tool)?.monthlyPrice;
-          return typeof amount === "number" ? formatUsd(amount) : "Custom";
+          return typeof amount === "number" ? usd(amount) : "Custom";
         }),
       },
       {
         label: "Annual Cost",
         values: selectedTools.map((tool) => {
           const amount = getCheapestPaidPlan(tool)?.yearlyPrice;
-          return typeof amount === "number" ? `${formatUsd(amount)}/yr` : "N/A";
+          return typeof amount === "number" ? `${usd(amount)}/yr` : "N/A";
         }),
       },
       { label: "API Pricing", values: selectedTools.map((tool) => tool.apiPricing) },
@@ -218,7 +219,7 @@ export default function CompareAiPlansPage(): ReactElement {
       { label: "Web browsing", values: selectedTools.map((tool) => (tool.capabilities.includes("web-browsing") ? "Yes" : "No")) },
       { label: "Best for", values: selectedTools.map((tool) => tool.bestFor) },
     ],
-    [selectedTools],
+    [selectedTools, usd],
   );
 
   const calculatorSummary = useMemo(() => {
@@ -260,8 +261,8 @@ export default function CompareAiPlansPage(): ReactElement {
     const sum = priced.reduce((s, c) => s + c.monthly, 0);
     const min = Math.min(...priced.map((c) => c.monthly));
     const waste = Math.max(0, sum - min);
-    const lineDesc = priced.map((c) => `${c.tool.name} · ${c.planName} · ${formatUsd(c.monthly)}/mo`).join(" · ");
-    const methodology = `Upper-bound overlap = sum of modeled chat subscriptions (${formatUsd(sum)}/mo) minus the cheapest kept seat (${formatUsd(min)}/mo) = ${formatUsd(waste)}/mo. This assumes one chat product could cover the workflow if features overlap; it is not usage-weighted. Sources: list prices in this catalog trace to vendor pages in “Official pricing sources”.`;
+    const lineDesc = priced.map((c) => `${c.tool.name} · ${c.planName} · ${usd(c.monthly)}/mo`).join(" · ");
+    const methodology = `Upper-bound overlap = sum of modeled chat subscriptions (${usd(sum)}/mo) minus the cheapest kept seat (${usd(min)}/mo) = ${usd(waste)}/mo. This assumes one chat product could cover the workflow if features overlap; it is not usage-weighted. Sources: list prices in this catalog trace to vendor pages in “Official pricing sources”.`;
 
     return {
       waste,
@@ -269,7 +270,7 @@ export default function CompareAiPlansPage(): ReactElement {
       detail: lineDesc,
       methodology,
     };
-  }, [calculatorRows]);
+  }, [calculatorRows, usd]);
 
   const smartRecommendation = useMemo(() => {
     if (calculatorRows.length === 0) {
@@ -298,7 +299,7 @@ export default function CompareAiPlansPage(): ReactElement {
     }
 
     if (calculatorSummary.monthly > 120) {
-      return `Modeled calculator spend is ${formatUsd(calculatorSummary.monthly)}/mo. Above ~$120/mo, portfolio discounts (e.g., Credex credits) and annual commits usually deserve a line in the business case.`;
+      return `Modeled calculator spend is ${usd(calculatorSummary.monthly)}/mo. Above ~$120/mo, portfolio discounts (e.g., Credex credits) and annual commits usually deserve a line in the business case.`;
     }
 
     if (slugs.size < calculatorRows.length) {
@@ -306,7 +307,7 @@ export default function CompareAiPlansPage(): ReactElement {
     }
 
     return "Stack looks diversified relative to the calculator rows you entered. Tune filters above, then align recommendations with the overlap math in Savings insights.";
-  }, [calculatorRows, calculatorTools, usageMode, calculatorSummary.monthly]);
+  }, [calculatorRows, calculatorTools, usageMode, calculatorSummary.monthly, usd]);
 
   const modalTool = modalToolSlug ? (TOOL_DATA.find((tool) => tool.slug === modalToolSlug) ?? null) : null;
 
@@ -318,10 +319,31 @@ export default function CompareAiPlansPage(): ReactElement {
     setCalculatorRows((current) => [...current, { id: crypto.randomUUID(), toolSlug: "chatgpt", planName: "Plus" }]);
 
   const updateCalculatorTool = (id: string, toolSlug: string): void => {
-    const tool = TOOL_DATA.find((entry) => entry.slug === toolSlug);
     setCalculatorRows((current) =>
-      current.map((row) => (row.id === id ? { ...row, toolSlug, planName: tool?.plans[0]?.name ?? "" } : row)),
+      current.map((row) => {
+        if (row.id !== id) {
+          return row;
+        }
+        const tool = TOOL_DATA.find((entry) => entry.slug === toolSlug);
+        const plans = tool?.plans ?? [];
+        const keepPlan = plans.some((p) => p.name === row.planName);
+        return {
+          ...row,
+          toolSlug,
+          planName: keepPlan ? row.planName : tool?.plans[0]?.name ?? "",
+        };
+      }),
     );
+  };
+
+  const showFreeTierTools = (): void => {
+    setPricingFilter("free");
+    setTypeFilter("all");
+    setCapabilityFilter("all");
+    setSearch("");
+    window.requestAnimationFrame(() => {
+      document.getElementById("tool-grid")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   const updateCalculatorPlan = (id: string, planName: string): void => {
@@ -376,8 +398,16 @@ export default function CompareAiPlansPage(): ReactElement {
           </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             <Stat label="Tools in catalog" value={String(quickStats.totalTools)} />
-            <Stat label="Lowest paid tier" value={`${formatUsd(quickStats.cheapestPaid)}/mo`} />
-            <Stat label="Tools with a free tier" value={String(quickStats.freePlans)} />
+            <Stat label="Lowest paid tier" value={`${usd(quickStats.cheapestPaid)}/mo`} />
+            <button
+              type="button"
+              onClick={showFreeTierTools}
+              className="rounded-2xl border border-border bg-muted/25 px-5 py-4 text-left transition hover:border-primary/50 hover:bg-muted/50"
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tools with a free tier</p>
+              <p className="mt-2 text-lg font-semibold tracking-tight text-foreground tabular-nums">{quickStats.freePlans}</p>
+              <p className="mt-2 text-xs font-medium text-primary">Show in catalog →</p>
+            </button>
           </div>
         </section>
 
@@ -421,7 +451,7 @@ export default function CompareAiPlansPage(): ReactElement {
           </div>
         </section>
 
-        <section className="mx-auto mt-10 grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <section id="tool-grid" className="mx-auto mt-10 grid max-w-5xl gap-5 sm:grid-cols-2 lg:grid-cols-4 scroll-mt-24">
           {filteredTools.length === 0 ? (
             <p className="col-span-full rounded-2xl border border-border bg-card/40 px-5 py-8 text-center text-sm text-muted-foreground">
               No tools match this search + filters. Clear search or set filters to “All”.
@@ -439,7 +469,7 @@ export default function CompareAiPlansPage(): ReactElement {
                 <p className="mt-4 text-sm text-muted-foreground">
                   From{" "}
                   {getCheapestPaidPlan(tool)?.monthlyPrice
-                    ? `${formatUsd(Number(getCheapestPaidPlan(tool)?.monthlyPrice))}/month`
+                    ? `${usd(Number(getCheapestPaidPlan(tool)?.monthlyPrice))}/month`
                     : "custom pricing"}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -451,11 +481,11 @@ export default function CompareAiPlansPage(): ReactElement {
                     onClick={() => toggleCompareTool(tool.slug)}
                     className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
                       selectedToolSlugs.includes(tool.slug)
-                        ? "bg-primary text-primary-foreground"
-                        : "border border-border bg-background text-foreground hover:bg-muted"
+                        ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary ring-offset-2 ring-offset-background"
+                        : "border-2 border-border bg-card text-foreground hover:border-primary/45 hover:bg-muted/80"
                     }`}
                   >
-                    {selectedToolSlugs.includes(tool.slug) ? "In comparison" : "Add to compare"}
+                    {selectedToolSlugs.includes(tool.slug) ? "✓ In comparison" : "Add to compare"}
                   </button>
                   <button
                     type="button"
@@ -474,7 +504,8 @@ export default function CompareAiPlansPage(): ReactElement {
           <div className="border-b border-border px-8 py-6 sm:px-10">
             <h2 className="section-title">Comparison</h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              Sticky header on wide screens. Scroll horizontally on smaller viewports.
+              Sticky header on wide screens. Scroll horizontally on smaller viewports.{" "}
+              <span className="text-foreground">Green cells</span> flag the most finance-friendly value on key price rows.
             </p>
           </div>
           {selectedTools.length === 0 ? (
@@ -496,16 +527,38 @@ export default function CompareAiPlansPage(): ReactElement {
                   </tr>
                 </thead>
                 <tbody className="bg-background/50">
-                  {comparisonRows.map((row) => (
-                    <tr key={row.label} className="border-t border-border">
-                      <td className="px-6 py-3.5 font-medium text-foreground">{row.label}</td>
-                      {row.values.map((value, index) => (
-                        <td key={`${row.label}-${selectedTools[index]?.slug ?? index}`} className="px-6 py-3.5 text-muted-foreground">
-                          {value}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
+                  {comparisonRows.map((row) => {
+                    const winners = getWinningColumnIndices(row.label, row.values);
+                    const showBestLabel =
+                      row.label === "Monthly Cost" ||
+                      row.label === "Annual Cost" ||
+                      row.label === "Cheapest Paid Plan";
+                    return (
+                      <tr key={row.label} className="border-t border-border">
+                        <td className="px-6 py-3.5 font-medium text-foreground">{row.label}</td>
+                        {row.values.map((value, index) => {
+                          const isWinner = winners?.has(index) ?? false;
+                          return (
+                            <td
+                              key={`${row.label}-${selectedTools[index]?.slug ?? index}`}
+                              className={`px-6 py-3.5 ${
+                                isWinner
+                                  ? "bg-emerald-500/15 font-medium text-emerald-950 dark:bg-emerald-500/20 dark:text-emerald-50"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {value}
+                              {isWinner && showBestLabel ? (
+                                <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-200">
+                                  Best
+                                </span>
+                              ) : null}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -527,7 +580,7 @@ export default function CompareAiPlansPage(): ReactElement {
               </p>
               {calculatorOverlapInsight.waste > 0 ? (
                 <p className="rounded-2xl border border-red-500/35 bg-red-950/35 px-5 py-4 text-sm font-medium text-red-200">
-                  Upper-bound overlap (modeled): {formatUsd(calculatorOverlapInsight.waste)}/month
+                  Upper-bound overlap (modeled): {usd(calculatorOverlapInsight.waste)}/month
                 </p>
               ) : null}
               {calculatorOverlapInsight.methodology ? (
@@ -581,7 +634,7 @@ export default function CompareAiPlansPage(): ReactElement {
                     tabIndex={-1}
                     aria-readonly="true"
                     title="Derived from catalog"
-                    value={typeof plan?.monthlyPrice === "number" ? `${formatUsd(Number(plan.monthlyPrice))}/month` : "Custom / usage"}
+                    value={typeof plan?.monthlyPrice === "number" ? `${usd(Number(plan.monthlyPrice))}/month` : "Custom / usage"}
                     className="input-product cursor-default select-none bg-muted/50 text-muted-foreground sm:col-span-3"
                   />
                   <button
@@ -602,16 +655,16 @@ export default function CompareAiPlansPage(): ReactElement {
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <div className="rounded-2xl border border-border bg-muted/25 px-5 py-4">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Monthly</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{formatUsd(calculatorSummary.monthly)}</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{usd(calculatorSummary.monthly)}</p>
             </div>
             <div className="rounded-2xl border border-border bg-muted/25 px-5 py-4">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Annual</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{formatUsd(calculatorSummary.annual)}</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{usd(calculatorSummary.annual)}</p>
             </div>
           </div>
           <p className="mt-6 rounded-2xl border border-emerald-500/35 bg-emerald-950/30 px-5 py-4 text-sm leading-relaxed text-emerald-100/90">
             A lean stack (one chat product + one coding assistant) often cuts redundant spend by up to{" "}
-            {formatUsd(Math.round(calculatorSummary.monthly * 0.3))}/month — validate against your real usage and vendor invoices.
+            {usd(Math.round(calculatorSummary.monthly * 0.3))}/month — validate against your real usage and vendor invoices.
           </p>
         </section>
 
@@ -686,7 +739,7 @@ export default function CompareAiPlansPage(): ReactElement {
                 <div key={`${modalTool.slug}-${plan.name}`} className="rounded-2xl border border-border bg-muted/20 p-5">
                   <h4 className="text-base font-semibold text-foreground">{plan.name}</h4>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {typeof plan.monthlyPrice === "number" ? `${formatUsd(Number(plan.monthlyPrice))}/month` : "Custom / usage-based"}
+                    {typeof plan.monthlyPrice === "number" ? `${usd(Number(plan.monthlyPrice))}/month` : "Custom / usage-based"}
                   </p>
                   <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                     {plan.features.map((feature) => (

@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import type { AuditInput, AuditResult, ToolAuditResult } from "@/lib/audit-engine";
+import { useMoneyFormatter } from "@/lib/hooks/use-money-formatter";
 
 const STORAGE_KEY_PREFIX = "credex-audit-session:";
 
@@ -46,6 +48,7 @@ function recommendationLabel(r: ToolAuditResult["recommendation"]): string {
 }
 
 export function AuditResultsClient({ auditId }: { auditId: string }): ReactElement {
+  const { usd } = useMoneyFormatter();
   const [data, setData] = useState<SessionPayload | null>(null);
   const [leadEmail, setLeadEmail] = useState("");
   const [leadName, setLeadName] = useState("");
@@ -126,14 +129,31 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
 
   return (
     <main className="mx-auto max-w-5xl px-5 pb-24 pt-14 sm:px-8 sm:pt-18">
-      <div className="flex flex-col gap-6 border-b border-border pb-10 sm:flex-row sm:items-end sm:justify-between">
+      <div className="rounded-2xl border border-emerald-500/35 bg-gradient-to-br from-emerald-950/50 to-card px-6 py-6 sm:px-8 sm:py-7">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+          <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-emerald-500/40 bg-emerald-500/15 text-emerald-600 dark:text-emerald-300">
+            <Sparkles className="size-5" aria-hidden />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-100">Audit complete</p>
+            <p className="mt-1 text-pretty text-lg font-medium tracking-tight text-foreground">
+              You modeled up to {usd(data.result.totalMonthlySavings)} / month back ({usd(data.result.totalAnnualSavings)} / year).
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Review the breakdown, copy a share link for your team, and drop your email if you want Credex to validate this against invoices.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-10 flex flex-col gap-6 border-b border-border pb-10 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="eyebrow">Audit results</p>
           <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             Modeled savings & recommendations
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Team {data.input.teamSize} · {data.input.useCase} · ~${modeledSpend.toLocaleString()}/mo modeled catalog spend
+            Team {data.input.teamSize} · {data.input.useCase} · {usd(modeledSpend)}/mo modeled catalog spend
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -160,11 +180,11 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
       <div className="mt-10 grid gap-4 sm:grid-cols-3">
         <div className="surface-card px-5 py-6">
           <p className="eyebrow">Monthly savings (modeled)</p>
-          <p className="mt-3 text-3xl font-semibold tabular-nums text-foreground">${data.result.totalMonthlySavings.toLocaleString()}</p>
+          <p className="mt-3 text-3xl font-semibold tabular-nums text-foreground">{usd(data.result.totalMonthlySavings)}</p>
         </div>
         <div className="surface-card px-5 py-6">
           <p className="eyebrow">Annual savings (modeled)</p>
-          <p className="mt-3 text-3xl font-semibold tabular-nums text-foreground">${data.result.totalAnnualSavings.toLocaleString()}</p>
+          <p className="mt-3 text-3xl font-semibold tabular-nums text-foreground">{usd(data.result.totalAnnualSavings)}</p>
         </div>
         <div className="surface-card px-5 py-6 ring-1 ring-border">
           <p className="eyebrow">Credex portfolio fit</p>
@@ -200,9 +220,9 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
                 <tr key={`${row.tool}-${row.currentPlan}`} className="border-t border-border">
                   <td className="px-6 py-4 font-medium text-foreground">{row.tool}</td>
                   <td className="px-6 py-4 text-muted-foreground">{recommendationLabel(row.recommendation)}</td>
-                  <td className="px-6 py-4 tabular-nums text-muted-foreground">${row.currentSpend.toLocaleString()}</td>
-                  <td className="px-6 py-4 tabular-nums text-muted-foreground">${row.estimatedNewSpend.toLocaleString()}</td>
-                  <td className="px-6 py-4 tabular-nums font-medium text-emerald-300/90">${row.monthlySavings.toLocaleString()}</td>
+                  <td className="px-6 py-4 tabular-nums text-muted-foreground">{usd(row.currentSpend)}</td>
+                  <td className="px-6 py-4 tabular-nums text-muted-foreground">{usd(row.estimatedNewSpend)}</td>
+                  <td className="px-6 py-4 tabular-nums font-medium text-emerald-700 dark:text-emerald-300">{usd(row.monthlySavings)}</td>
                 </tr>
               ))}
             </tbody>
