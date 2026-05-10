@@ -14,6 +14,8 @@ describe("runAudit", () => {
     expect(claude?.recommendation).toBe("downgrade");
     expect(claude?.recommendedPlan).toBe("pro");
     expect(claude?.monthlySavings).toBe(10);
+    expect(claude?.pricingCitations?.length).toBeGreaterThan(0);
+    expect(claude?.pricingCitations?.some((c) => c.url.includes("anthropic"))).toBe(true);
   });
 
   it("flags Cursor + Copilot overlap as redundant for coding workflows", () => {

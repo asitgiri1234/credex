@@ -18,6 +18,19 @@ interface SessionPayload {
   warnings?: string[];
 }
 
+function normalizeSessionPayload(raw: SessionPayload): SessionPayload {
+  return {
+    ...raw,
+    result: {
+      ...raw.result,
+      tools: raw.result.tools.map((t) => ({
+        ...t,
+        pricingCitations: Array.isArray(t.pricingCitations) ? t.pricingCitations : [],
+      })),
+    },
+  };
+}
+
 function loadSession(auditId: string): SessionPayload | null {
   if (typeof window === "undefined") {
     return null;
@@ -27,9 +40,20 @@ function loadSession(auditId: string): SessionPayload | null {
     if (!raw) {
       return null;
     }
-    return JSON.parse(raw) as SessionPayload;
+    return normalizeSessionPayload(JSON.parse(raw) as SessionPayload);
   } catch {
     return null;
+  }
+}
+
+function persistSession(payload: SessionPayload): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  try {
+    sessionStorage.setItem(`${STORAGE_KEY_PREFIX}${payload.auditId}`, JSON.stringify(payload));
+  } catch {
+    /* quota or private mode */
   }
 }
 
@@ -51,14 +75,69 @@ function recommendationLabel(r: ToolAuditResult["recommendation"]): string {
 export function AuditResultsClient({ auditId }: { auditId: string }): ReactElement {
   const { usd } = useMoneyFormatter();
   const [data, setData] = useState<SessionPayload | null>(null);
+  const [hydrating, setHydrating] = useState(true);
   const [leadEmail, setLeadEmail] = useState("");
   const [leadName, setLeadName] = useState("");
+  const [leadHoneypot, setLeadHoneypot] = useState("");
   const [leadStatus, setLeadStatus] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
   const [resultsAnnouncement, setResultsAnnouncement] = useState("");
 
   useEffect(() => {
-    setData(loadSession(auditId));
+    const local = loadSession(auditId);
+    if (local) {
+      setData(local);
+      setHydrating(false);
+      return;
+    }
+    let cancelled = false;
+    setHydrating(true);
+    void (async () => {
+      try {
+        const res = await fetch(`/api/audit/${encodeURIComponent(auditId)}`);
+        if (!res.ok) {
+          if (!cancelled) {
+            setData(null);
+          }
+          return;
+        }
+        const json = (await res.json()) as {
+          auditId?: string;
+          input?: AuditInput;
+          result?: AuditResult;
+          narrative?: string;
+          warnings?: string[];
+        };
+        if (cancelled || !json.auditId || !json.input || !json.result || typeof json.narrative !== "string") {
+          if (!cancelled) {
+            setData(null);
+          }
+          return;
+        }
+        const payload = normalizeSessionPayload({
+          auditId: json.auditId,
+          input: json.input,
+          result: json.result,
+          narrative: json.narrative,
+          warnings: json.warnings,
+        });
+        persistSession(payload);
+        if (!cancelled) {
+          setData(payload);
+        }
+      } catch {
+        if (!cancelled) {
+          setData(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setHydrating(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [auditId]);
 
   const sortedTools = useMemo(() => {
@@ -73,7 +152,7 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
     const res = await fetch("/api/lead", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: leadEmail, name: leadName, auditId }),
+      body: JSON.stringify({ email: leadEmail, name: leadName, auditId, website: leadHoneypot }),
     });
     const json = (await res.json()) as { ok?: boolean; message?: string; error?: string };
     if (!res.ok) {
@@ -81,7 +160,7 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
       return;
     }
     setLeadStatus(json.message ?? "Thanks!");
-  }, [auditId, leadEmail, leadName]);
+  }, [auditId, leadEmail, leadHoneypot, leadName]);
 
   const createShare = useCallback(async () => {
     if (!data) {
@@ -122,6 +201,19 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
     );
   }, [data, usd]);
 
+  if (hydrating) {
+    return (
+      <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-5 py-20">
+        <Breadcrumbs items={[{ href: "/", label: "Credex" }, { label: "Audit results" }]} />
+        <p className="eyebrow">Audit results</p>
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">Loading audit…</h1>
+        <p className="mt-4 text-sm text-muted-foreground" role="status">
+          Retrieving results from this browser or the Credex server.
+        </p>
+      </main>
+    );
+  }
+
   if (!data) {
     return (
       <main id="main" tabIndex={-1} className="mx-auto max-w-2xl px-5 py-20">
@@ -129,7 +221,8 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
         <p className="eyebrow">Audit results</p>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">No session data for this audit</h1>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-          Open this page from the same browser right after running an audit, or open a share link someone sent you.
+          This link may be from another device, the server may have restarted, or the audit expired. Run a new audit on this device, or open a{" "}
+          <strong className="text-foreground">share link</strong> (<span className="text-foreground">/r/…</span>) from the results page.
         </p>
         <Link href="/" className="btn-primary mt-8 inline-flex">
           Back to audit
@@ -210,9 +303,18 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
           </div>
         </div>
 
-        <section className="surface-card p-8 sm:p-10">
-          <h2 className="section-title">Executive summary</h2>
+        <section className="surface-card p-8 sm:p-10" aria-labelledby="exec-summary-heading">
+          <h2 id="exec-summary-heading" className="section-title">
+            Executive summary
+          </h2>
           <p className="mt-6 text-pretty text-[17px] leading-relaxed text-muted-foreground">{data.narrative}</p>
+          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+            Figures use catalog list-price snapshots with{" "}
+            <Link href="/compare-ai-plans#pricing-sources" className="underline underline-offset-4">
+              cited vendor pages
+            </Link>
+            ; validate before presenting to finance.
+          </p>
         </section>
 
         <section className="surface-card overflow-hidden p-0" aria-labelledby="savings-breakdown-heading">
@@ -221,7 +323,7 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
               Savings breakdown
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              Numbers come from catalog pricing, seat math, overlap rules, and tier-fit checks in the Credex audit engine.
+              List-price assumptions are cited per vendor below. Savings combine seat math, overlap rules, and tier-fit checks in the Credex audit engine.
             </p>
           </div>
           <div className="overflow-x-auto">
@@ -244,6 +346,9 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
                   <th scope="col" className="px-6 py-3 font-semibold text-foreground">
                     $/mo
                   </th>
+                  <th scope="col" className="px-6 py-3 font-semibold text-foreground">
+                    Pricing sources
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -256,6 +361,21 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
                     <td className="px-6 py-4 tabular-nums text-muted-foreground">{usd(row.currentSpend)}</td>
                     <td className="px-6 py-4 tabular-nums text-muted-foreground">{usd(row.estimatedNewSpend)}</td>
                     <td className="px-6 py-4 tabular-nums font-medium text-emerald-700 dark:text-emerald-300">{usd(row.monthlySavings)}</td>
+                    <td className="px-6 py-4 text-xs text-muted-foreground">
+                      {row.pricingCitations.length === 0 ? (
+                        <span>—</span>
+                      ) : (
+                        <ul className="list-inside list-disc space-y-1">
+                          {row.pricingCitations.map((c) => (
+                            <li key={c.url}>
+                              <a href={c.url} className="text-foreground underline underline-offset-2" target="_blank" rel="noreferrer">
+                                {c.label}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -277,6 +397,17 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
                 {row.recommendedPlan ? (
                   <p className="mt-2 text-xs text-muted-foreground">Suggested plan: {row.recommendedPlan}</p>
                 ) : null}
+                {row.pricingCitations.length > 0 ? (
+                  <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    {row.pricingCitations.map((c) => (
+                      <li key={c.url}>
+                        <a href={c.url} className="text-foreground underline underline-offset-2" target="_blank" rel="noreferrer">
+                          {c.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </div>
             ))}
           </div>
@@ -291,28 +422,60 @@ export function AuditResultsClient({ auditId }: { auditId: string }): ReactEleme
             : "Start by capturing the modeled plan changes above. When monthly AI spend climbs, Credex credits become a lever—re-run the audit as you add seats or API usage."}
         </p>
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          <div>
-            <p className="text-[13px] font-medium text-muted-foreground">Work email</p>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void submitLead();
+            }}
+          >
             <input
-              value={leadEmail}
-              onChange={(e) => setLeadEmail(e.target.value)}
-              type="email"
-              className="input-product mt-2"
-              placeholder="you@company.com"
-              autoComplete="email"
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              value={leadHoneypot}
+              onChange={(e) => setLeadHoneypot(e.target.value)}
+              className="pointer-events-none absolute left-[-10000px] h-px w-px opacity-0"
             />
-            <p className="mt-4 text-[13px] font-medium text-muted-foreground">Name (optional)</p>
-            <input
-              value={leadName}
-              onChange={(e) => setLeadName(e.target.value)}
-              className="input-product mt-2"
-              placeholder="Jordan Lee"
-            />
-            <button type="button" onClick={() => void submitLead()} className="btn-primary mt-6 w-full sm:w-auto">
+            <div>
+              <label htmlFor="lead-email" className="text-[13px] font-medium text-muted-foreground">
+                Work email
+              </label>
+              <input
+                id="lead-email"
+                value={leadEmail}
+                onChange={(e) => setLeadEmail(e.target.value)}
+                type="email"
+                className="input-product mt-2"
+                placeholder="you@company.com"
+                autoComplete="email"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="lead-name" className="text-[13px] font-medium text-muted-foreground">
+                Name (optional)
+              </label>
+              <input
+                id="lead-name"
+                value={leadName}
+                onChange={(e) => setLeadName(e.target.value)}
+                className="input-product mt-2"
+                placeholder="Jordan Lee"
+                autoComplete="name"
+              />
+            </div>
+            <button type="submit" className="btn-primary w-full sm:w-auto">
               Talk to Credex
             </button>
-            {leadStatus ? <p className="mt-3 text-sm text-muted-foreground">{leadStatus}</p> : null}
-          </div>
+            {leadStatus ? (
+              <p className="text-sm text-muted-foreground" role="status">
+                {leadStatus}
+              </p>
+            ) : null}
+          </form>
           <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/25 px-5 py-5 text-sm leading-relaxed text-emerald-100/90">
             <p className="font-semibold text-emerald-50">What happens next</p>
             <p className="mt-3 text-emerald-100/85">

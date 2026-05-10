@@ -292,6 +292,7 @@ export default function Home(): ReactElement {
       setAuditAnnouncement(
         `Audit finished successfully. Modeled monthly savings ${usd(result.totalMonthlySavings)}. Opening full results.`,
       );
+      setIsRunningAudit(false);
       await new Promise((r) => setTimeout(r, 320));
       router.push(`/audit/${json.auditId}`);
     } catch {

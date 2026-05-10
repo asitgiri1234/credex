@@ -1,4 +1,5 @@
 import { PRICING, type PlanPrice, type ToolName } from "@/lib/pricing-data";
+import { type PricingCitation, officialCitationForToolKey } from "@/lib/pricing-citations";
 
 export type UseCase = "coding" | "writing" | "data" | "research" | "mixed";
 export type Recommendation = "downgrade" | "switch" | "optimal" | "redundant";
@@ -29,6 +30,8 @@ export interface ToolAuditResult {
   annualSavings: number;
   reasoning: string;
   priority: Priority;
+  /** Official vendor pricing pages backing list-price assumptions for this line. */
+  pricingCitations: PricingCitation[];
 }
 
 export interface AuditResult {
@@ -47,6 +50,8 @@ interface CandidateAction {
   recommendedPlan?: string;
   estimatedNewSpend: number;
   reasoning: string;
+  /** Extra pricing pages (e.g. cross-vendor benchmark) to cite alongside the current vendor. */
+  extraCitations?: PricingCitation[];
 }
 
 const TOOL_LABELS: Record<ToolName, string> = {
@@ -71,31 +76,39 @@ const TOOL_LABELS: Record<ToolName, string> = {
   tabnine: "Tabnine",
 };
 
-const CROSS_TOOL_BASELINE: Record<UseCase, { plan: string; monthly: number; reason: string }> = {
+const CROSS_TOOL_BASELINE: Record<
+  UseCase,
+  { plan: string; monthly: number; reason: string; benchmarkCitation: PricingCitation }
+> = {
   coding: {
     plan: "Windsurf Pro",
     monthly: 15,
     reason: "For most coding teams, Windsurf Pro covers core code-assist workflows at the lowest fixed cost.",
+    benchmarkCitation: { label: "Windsurf — official pricing", url: "https://windsurf.com/pricing" },
   },
   writing: {
     plan: "Claude Pro",
     monthly: 20,
     reason: "Claude Pro is usually enough for writing-heavy usage with predictable monthly spend.",
+    benchmarkCitation: { label: "Anthropic (Claude) — official pricing", url: "https://www.anthropic.com/pricing" },
   },
   data: {
     plan: "ChatGPT Team",
     monthly: 30,
     reason: "Data workflows generally need broader tool coverage and higher limits than single-user plans.",
+    benchmarkCitation: { label: "ChatGPT — official pricing", url: "https://openai.com/chatgpt/pricing" },
   },
   research: {
     plan: "Claude Pro",
     monthly: 20,
     reason: "Research workloads typically benefit from Claude's long-context strength without team-tier costs.",
+    benchmarkCitation: { label: "Anthropic (Claude) — official pricing", url: "https://www.anthropic.com/pricing" },
   },
   mixed: {
     plan: "ChatGPT Team",
     monthly: 30,
     reason: "Mixed usage needs multimodal coverage and collaboration features from a shared team plan.",
+    benchmarkCitation: { label: "ChatGPT — official pricing", url: "https://openai.com/chatgpt/pricing" },
   },
 };
 
@@ -214,6 +227,7 @@ const buildActionForTool = (input: ToolInput, teamSize: number, useCase: UseCase
       estimatedNewSpend: baseline.monthly,
       recommendedAction: `Consider switching to ${baseline.plan} as a lower-cost primary option.`,
       reasoning: baseline.reason,
+      extraCitations: [baseline.benchmarkCitation],
     };
   }
 
@@ -222,8 +236,23 @@ const buildActionForTool = (input: ToolInput, teamSize: number, useCase: UseCase
     estimatedNewSpend: input.monthlySpend,
     recommendedAction: "Keep the current setup; no defensible cheaper option found for your profile.",
     reasoning: `Current ${TOOL_LABELS[input.tool]} spend appears efficient for your use case and team size.`,
+    extraCitations: [],
   };
 };
+
+function mergeCitations(tool: ToolName, action: CandidateAction): PricingCitation[] {
+  const out: PricingCitation[] = [];
+  const primary = officialCitationForToolKey(tool);
+  if (primary) {
+    out.push(primary);
+  }
+  for (const c of action.extraCitations ?? []) {
+    if (!out.some((x) => x.url === c.url)) {
+      out.push(c);
+    }
+  }
+  return out;
+}
 
 const markRedundantCodingTools = (results: ToolAuditResult[], input: AuditInput): ToolAuditResult[] => {
   if (input.useCase !== "coding" && input.useCase !== "mixed") {
@@ -256,6 +285,7 @@ const markRedundantCodingTools = (results: ToolAuditResult[], input: AuditInput)
       annualSavings: monthlySavings * 12,
       reasoning: `${result.tool} overlaps with another coding assistant in your stack; keeping both usually duplicates spend.`,
       priority: monthlySavings >= 100 ? "high" : "medium",
+      pricingCitations: result.pricingCitations,
     };
   });
 };
@@ -287,6 +317,7 @@ export const runAudit = (input: AuditInput): AuditResult => {
       annualSavings: monthlySavings * 12,
       reasoning: action.reasoning,
       priority: getPriority(monthlySavings),
+      pricingCitations: mergeCitations(toolInput.tool, action),
     };
   });
 
@@ -312,6 +343,7 @@ export const runAudit = (input: AuditInput): AuditResult => {
           reasoning:
             "Your spend level qualifies for credit aggregation. Typical discount bands are 15-30%; this audit uses a conservative 20% midpoint.",
           priority: getPriority(credexCreditsSavings),
+          pricingCitations: [],
         } satisfies ToolAuditResult,
       ]
     : withRedundancyChecks;

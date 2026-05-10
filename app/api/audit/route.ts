@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { runAudit } from "@/lib/audit-engine";
 import { buildAuditInputFromUi, clampSeats, clampTeamSize } from "@/lib/audit-bridge";
 import { generateAuditNarrative } from "@/lib/ai-summary";
+import { saveAuditSession } from "@/lib/audit-session-store";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { getCatalogMonthlySpend } from "@/lib/subscription-spend";
 import type { UseCase } from "@/lib/audit-engine";
@@ -82,6 +83,16 @@ export async function POST(request: Request): Promise<Response> {
   const result = runAudit(input);
   const { text: narrative, source: narrativeSource } = await generateAuditNarrative(input, result);
   const resultWithSummary = { ...result, summary: narrative };
+
+  saveAuditSession({
+    auditId: result.auditId,
+    input,
+    result: resultWithSummary,
+    narrative,
+    narrativeSource,
+    warnings,
+    createdAt: new Date().toISOString(),
+  });
 
   return NextResponse.json({
     auditId: result.auditId,

@@ -1,9 +1,19 @@
 import type { AuditInput, AuditResult } from "@/lib/audit-engine";
 
-const WORD_TARGET = 100;
+const WORD_MIN = 85;
+const WORD_MAX = 115;
 
 function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function trimToWordRange(text: string, minWords: number, maxWords: number): string {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  if (words.length <= maxWords) {
+    return words.join(" ");
+  }
+  const slice = words.slice(0, Math.max(minWords, maxWords));
+  return `${slice.join(" ").trim()}…`;
 }
 
 function buildTemplateNarrative(input: AuditInput, result: AuditResult): string {
@@ -87,17 +97,19 @@ Write the summary paragraph now.`;
 
   const llm = await callOpenAiSummary(prompt);
   if (llm && countWords(llm) >= 60) {
-    return { text: llm, source: "openai" };
+    const words = countWords(llm);
+    const text =
+      words > WORD_MAX ? trimToWordRange(llm.replace(/\s+/g, " ").trim(), WORD_MIN, WORD_MAX) : llm.replace(/\s+/g, " ").trim();
+    return { text, source: "openai" };
   }
 
   const fallback = buildTemplateNarrative(input, result);
   let text = fallback;
-  if (countWords(text) < 80) {
+  if (countWords(text) < WORD_MIN) {
     text = `${text} We anchored estimates to public list prices and seat math, then applied overlap and tier-fit rules from the Credex audit engine—treat figures as directional until you validate usage.`;
   }
-  if (countWords(text) > WORD_TARGET + 35) {
-    const words = text.split(/\s+/);
-    text = words.slice(0, WORD_TARGET + 15).join(" ").trim() + "…";
+  if (countWords(text) > WORD_MAX) {
+    text = trimToWordRange(text, WORD_MIN, WORD_MAX);
   }
   return { text, source: "template" };
 }

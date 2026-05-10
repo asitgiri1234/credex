@@ -121,10 +121,11 @@ export default function CompareAiPlansPage(): ReactElement {
       return;
     }
     const prev = loadCredexStack();
+    const usageChanged = prev != null && prev.compareUsageMode !== usageMode;
     saveCredexStack({
       v: 2,
       teamSize: prev?.teamSize ?? "5",
-      useCase: compareModeToUseCase(usageMode),
+      useCase: usageChanged ? compareModeToUseCase(usageMode) : (prev?.useCase ?? compareModeToUseCase(usageMode)),
       compareUsageMode: usageMode,
       rows: mergeCalculatorWithPreviousSeats(calculatorRows, prev?.rows),
     });

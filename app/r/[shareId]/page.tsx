@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactElement } from "react";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { redactEmails } from "@/lib/share-sanitize";
 import { getSharePayload } from "@/lib/share-store";
 
 function siteBase(): string {
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? `Credex audit · ~$${data.result.totalMonthlySavings}/mo modeled savings`
     : "Credex shared audit";
   const description = data
-    ? `${data.narrative.slice(0, 180).replace(/\s+/g, " ").trim()}…`
+    ? `${redactEmails(data.narrative).slice(0, 180).replace(/\s+/g, " ").trim()}…`
     : "AI spend audit snapshot — modeled savings, overlap signals, and Credex integration.";
   const ogImage = `/api/og?title=${encodeURIComponent(title)}&subtitle=${encodeURIComponent(
     data ? `~$${data.result.totalAnnualSavings.toLocaleString()}/yr modeled` : "Credex",

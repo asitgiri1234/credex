@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import type { AuditInput, AuditResult, UseCase } from "@/lib/audit-engine";
+import { buildShareablePayload } from "@/lib/share-sanitize";
 import { saveSharePayload } from "@/lib/share-store";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
@@ -70,13 +71,8 @@ export async function POST(request: Request): Promise<Response> {
   const shareId = randomUUID();
   const createdAt = new Date().toISOString();
 
-  saveSharePayload(shareId, {
-    auditId: body.result.auditId,
-    input: body.input,
-    result: body.result,
-    narrative,
-    createdAt,
-  });
+  const safe = buildShareablePayload(body.result.auditId, body.input, body.result, narrative, createdAt);
+  saveSharePayload(shareId, safe);
 
   const urlPath = `/r/${shareId}`;
   return NextResponse.json({ shareId, path: urlPath, urlPath });
