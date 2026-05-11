@@ -1,3 +1,12 @@
+# Credex
+
+AI spend audit and subscription optimizer built with [Next.js](https://nextjs.org).
+
+- **Live site:** [https://credex-xi-rust.vercel.app/](https://credex-xi-rust.vercel.app/)
+- **Product walkthrough (Loom):** [https://www.loom.com/share/fd4009496df64953bcdf8def4c7bd349](https://www.loom.com/share/fd4009496df64953bcdf8def4c7bd349)
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
